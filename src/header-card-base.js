@@ -56,11 +56,14 @@ export class SerenityHeaderCardBase extends HTMLElement {
         <div class="row">
           <div class="left">
             <div class="icon-box"><ha-icon></ha-icon></div>
-            <div class="title"></div>
-            <div class="secondary"></div>
+            <div class="text">
+              <div class="title"></div>
+              <div class="secondary"></div>
+            </div>
           </div>
           <div class="rule"></div>
           <div class="badge"><span class="dot"></span><span class="badge-text"></span></div>
+          <div class="buttons"></div>
         </div>
       </div>`;
     root.appendChild(card);
@@ -72,12 +75,14 @@ export class SerenityHeaderCardBase extends HTMLElement {
       eyebrow: $(".eyebrow"),
       iconBox: $(".icon-box"),
       icon: $(".icon-box ha-icon"),
+      text: $(".text"),
       title: $(".title"),
       secondary: $(".secondary"),
       rule: $(".rule"),
       badge: $(".badge"),
       badgeDot: $(".badge .dot"),
       badgeText: $(".badge .badge-text"),
+      buttons: $(".buttons"),
     };
 
     this.classList.add("v-" + this.constructor.variant);
@@ -95,7 +100,7 @@ export class SerenityHeaderCardBase extends HTMLElement {
         --_soft: var(--serenity-header-soft, color-mix(in srgb, var(--_accent) 14%, transparent));
         --_value: var(--serenity-value-color, var(--primary-text-color, #0f1a16));
         --_muted: var(--serenity-muted-color, var(--secondary-text-color, #9aa3af));
-        --_rule: var(--serenity-rule-color, color-mix(in srgb, var(--_muted) 32%, transparent));
+        --_rule: var(--serenity-rule-color, var(--divider-color, rgba(120, 130, 138, 0.28)));
         --_font: var(--serenity-header-font, "Inter", "Roboto", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif);
         display: block;
         font-family: var(--_font);
@@ -117,9 +122,14 @@ export class SerenityHeaderCardBase extends HTMLElement {
       }
       .eyebrow.upper { text-transform: uppercase; }
       :host(.v-title) .eyebrow { margin-bottom: 10px; }
-      .eyebrow.hidden, .icon-box.hidden, .secondary.hidden, .badge.hidden { display: none; }
+      .eyebrow.hidden, .icon-box.hidden, .secondary.hidden, .badge.hidden, .buttons.hidden { display: none; }
       .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
       .left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      :host(.v-title) .left { flex: 1 1 auto; }
+      :host(.v-subtitle) .left { flex: 0 1 auto; }
+      .text { display: flex; min-width: 0; }
+      :host(.v-title) .text { flex-direction: column; gap: 2px; }
+      :host(.v-subtitle) .text { flex-direction: row; align-items: baseline; gap: 8px; }
       .icon-box {
         flex: 0 0 auto; width: 36px; height: 36px; border-radius: 11px;
         background: var(--_soft); display: flex; align-items: center; justify-content: center;
@@ -128,16 +138,27 @@ export class SerenityHeaderCardBase extends HTMLElement {
       .title { color: var(--_value); line-height: 1.2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       :host(.v-title) .title { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; }
       :host(.v-subtitle) .title { font-size: 17px; font-weight: 700; }
-      .secondary { color: var(--_muted); font-size: 14px; font-weight: 500; white-space: nowrap; flex: 0 0 auto; }
+      .secondary { color: var(--_muted); font-size: 14px; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .rule { display: none; }
       :host(.v-subtitle) .rule {
         display: block; flex: 1 1 auto; min-width: 16px;
-        height: 1px; background: var(--_rule);
+        height: 1px; border-radius: 1px; background: var(--_rule);
       }
       .badge {
         display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
         background: var(--_soft); padding: 5px 11px; border-radius: 999px;
       }
+      .buttons { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+      .hbtn {
+        width: 40px; height: 40px; flex: 0 0 auto; padding: 0; border: none; cursor: pointer;
+        border-radius: 12px; background: var(--serenity-button-bg, #ffffff);
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 1px 2px rgba(17, 24, 20, 0.08), 0 2px 6px rgba(17, 24, 20, 0.05);
+        transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+      }
+      .hbtn:hover { background: var(--serenity-button-hover, #f4f6f5); }
+      .hbtn:active { transform: scale(0.96); }
+      .hbtn ha-icon { --mdc-icon-size: 20px; color: var(--serenity-button-icon, #374151); }
       .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--_accent); }
       .badge .badge-text { font-size: 13px; font-weight: 600; color: var(--_accent); white-space: nowrap; }
       .badge.no-dot .dot { display: none; }
@@ -208,12 +229,35 @@ export class SerenityHeaderCardBase extends HTMLElement {
       els.badgeDot.style.background = badge.color || "";
     }
 
+    // Buttons (right-side action squares)
+    this._renderButtons(Array.isArray(c.buttons) ? c.buttons : []);
+
     // Tap target
     const ta = c.tap_action;
     els.wrap.classList.toggle(
       "actionable",
       !!(ta && ta.action && ta.action !== "none")
     );
+  }
+
+  _renderButtons(buttons) {
+    const host = this._els.buttons;
+    host.classList.toggle("hidden", buttons.length === 0);
+    host.textContent = "";
+    for (const b of buttons) {
+      const btn = document.createElement("button");
+      btn.className = "hbtn";
+      if (b.title) btn.setAttribute("aria-label", b.title);
+      const icon = document.createElement("ha-icon");
+      icon.setAttribute("icon", b.icon || "mdi:dots-horizontal");
+      if (b.icon_color) icon.style.color = b.icon_color;
+      btn.appendChild(icon);
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this._runAction(b.tap_action, b.entity);
+      });
+      host.appendChild(btn);
+    }
   }
 
   /** Resolve a string | count-spec into display text. */
@@ -238,7 +282,10 @@ export class SerenityHeaderCardBase extends HTMLElement {
   }
 
   _handleAction() {
-    const ta = this._config.tap_action;
+    this._runAction(this._config.tap_action);
+  }
+
+  _runAction(ta, fallbackEntity) {
     if (!ta || !ta.action || ta.action === "none") return;
     if (ta.action === "navigate" && ta.navigation_path) {
       window.history.pushState(null, "", ta.navigation_path);
@@ -247,8 +294,12 @@ export class SerenityHeaderCardBase extends HTMLElement {
       );
     } else if (ta.action === "url" && ta.url_path) {
       window.open(ta.url_path, ta.new_tab === false ? "_self" : "_blank");
+    } else if (ta.action === "toggle") {
+      const ent = ta.entity || fallbackEntity || this._config.entity;
+      if (ent && this._hass)
+        this._hass.callService("homeassistant", "toggle", { entity_id: ent });
     } else if (ta.action === "more-info") {
-      const ent = ta.entity || this._config.entity;
+      const ent = ta.entity || fallbackEntity || this._config.entity;
       if (ent)
         this.dispatchEvent(
           new CustomEvent("hass-more-info", {
