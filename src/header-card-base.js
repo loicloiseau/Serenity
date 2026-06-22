@@ -59,6 +59,7 @@ export class SerenityHeaderCardBase extends HTMLElement {
             <div class="title"></div>
             <div class="secondary"></div>
           </div>
+          <div class="rule"></div>
           <div class="badge"><span class="dot"></span><span class="badge-text"></span></div>
         </div>
       </div>`;
@@ -73,6 +74,7 @@ export class SerenityHeaderCardBase extends HTMLElement {
       icon: $(".icon-box ha-icon"),
       title: $(".title"),
       secondary: $(".secondary"),
+      rule: $(".rule"),
       badge: $(".badge"),
       badgeDot: $(".badge .dot"),
       badgeText: $(".badge .badge-text"),
@@ -89,11 +91,14 @@ export class SerenityHeaderCardBase extends HTMLElement {
   _css() {
     return `
       :host {
-        --_accent: var(--serenity-header-color, #4FAE7C);
+        --_accent: var(--serenity-header-color, #3E9E6B);
         --_soft: var(--serenity-header-soft, color-mix(in srgb, var(--_accent) 14%, transparent));
-        --_value: var(--serenity-value-color, var(--primary-text-color, #1f2937));
+        --_value: var(--serenity-value-color, var(--primary-text-color, #0f1a16));
         --_muted: var(--serenity-muted-color, var(--secondary-text-color, #9aa3af));
+        --_rule: var(--serenity-rule-color, color-mix(in srgb, var(--_muted) 32%, transparent));
+        --_font: var(--serenity-header-font, "Inter", "Roboto", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif);
         display: block;
+        font-family: var(--_font);
       }
       ha-card { padding: 16px 18px; }
       ha-card.flush {
@@ -124,7 +129,15 @@ export class SerenityHeaderCardBase extends HTMLElement {
       :host(.v-title) .title { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; }
       :host(.v-subtitle) .title { font-size: 17px; font-weight: 700; }
       .secondary { color: var(--_muted); font-size: 14px; font-weight: 500; white-space: nowrap; flex: 0 0 auto; }
-      .badge { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+      .rule { display: none; }
+      :host(.v-subtitle) .rule {
+        display: block; flex: 1 1 auto; min-width: 16px;
+        height: 1px; background: var(--_rule);
+      }
+      .badge {
+        display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
+        background: var(--_soft); padding: 5px 11px; border-radius: 999px;
+      }
       .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--_accent); }
       .badge .badge-text { font-size: 13px; font-weight: 600; color: var(--_accent); white-space: nowrap; }
       .badge.no-dot .dot { display: none; }
