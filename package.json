@@ -1,0 +1,22 @@
+{
+  "name": "serenity-cards",
+  "version": "1.0.0",
+  "description": "Minimal temperature & humidity Lovelace cards for Home Assistant, designed for the Serenity theme.",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c --watch"
+  },
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "custom-card",
+    "hacs"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.18.0"
+  }
+}

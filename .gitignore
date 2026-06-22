@@ -1,0 +1,10 @@
+node_modules/
+*.log
+.DS_Store
+.cache/
+
+# dist/ is intentionally committed so HACS can install from the
+# default branch without a formal release. If you switch to
+# release-based installs (see .github/workflows/release.yml),
+# you can uncomment the next line.
+# dist/

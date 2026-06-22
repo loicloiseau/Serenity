@@ -1,0 +1,27 @@
+name: Build & attach release asset
+
+# Optional: runs when you publish a GitHub release, builds the bundle
+# and attaches dist/serenity-cards.js to that release. HACS will then
+# prefer the release asset. You can delete this file if you'd rather
+# just commit dist/ to the branch.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/serenity-cards.js
