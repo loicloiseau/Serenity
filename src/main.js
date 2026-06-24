@@ -6,6 +6,7 @@ import "./cards/temperature-card.js";
 import "./cards/humidity-card.js";
 import "./cards/climate-card.js";
 import "./cards/thermostat-card.js";
+import "./cards/person-card.js";
 import "./cards/title-card.js";
 import "./cards/subtitle-card.js";
 
