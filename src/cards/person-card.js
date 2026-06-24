@@ -257,29 +257,26 @@ export class SerenityPersonCard extends HTMLElement {
       : c.away_label || "Sorti";
     els.status.classList.toggle("home", isHome);
 
-    // Location line (static config > bound entity > derived from state)
-    let loc = c.location;
+    // Location line = the GPS zone the person is in.
+    // The person's state IS the zone (home / not_home / <zone name>); we look
+    // up the matching zone.* entity to use its real name + icon.
+    let loc = c.location; // optional static override only
     let icon = c.location_icon;
-    if (!loc && c.location_entity) {
-      const lst = this._hass.states[c.location_entity];
-      if (lst && !NON_ZONE.has(String(lst.state).toLowerCase())) {
-        loc = titleCase(lst.state);
-        icon = icon || "mdi:map-marker-outline";
-      }
-    }
     if (!loc) {
-      if (isHome) {
-        loc = c.home_location || "Maison";
-        icon = icon || "mdi:home-outline";
-      } else if (!NON_ZONE.has(state)) {
-        loc = titleCase(state); // a named GPS zone
-        icon = icon || "mdi:map-marker-outline";
+      const s = String(state).toLowerCase();
+      if (s === "not_home") {
+        loc = c.away_label_location || "Absent";
+        icon = icon || "mdi:map-marker-off-outline";
+      } else if (s === "unknown") {
+        loc = "Inconnu";
+        icon = icon || "mdi:map-marker-question-outline";
       } else {
-        loc = c.away_location || "Absent";
-        icon = icon || "mdi:chevron-right";
+        const zi = this._zoneInfo(state); // home or named GPS zone
+        loc = zi ? zi.name : titleCase(state);
+        icon = icon || (zi && zi.icon) || "mdi:map-marker-outline";
       }
     }
-    icon = icon || (isHome ? "mdi:home-outline" : "mdi:chevron-right");
+    icon = icon || "mdi:map-marker-outline";
     els.loc.style.display = loc ? "flex" : "none";
     els.locText.textContent = loc || "";
     els.locIco.setAttribute("icon", icon);
@@ -288,6 +285,27 @@ export class SerenityPersonCard extends HTMLElement {
     const since = c.show_since === false ? "" : sinceText(st.last_changed);
     els.since.textContent = since;
     els.since.classList.toggle("hidden", !since);
+  }
+
+  /** Resolve a person state ("home" or a zone name) to the GPS zone's name + icon. */
+  _zoneInfo(state) {
+    const hs = this._hass.states;
+    const s = String(state).toLowerCase();
+    if (s === "home" && hs["zone.home"]) {
+      const z = hs["zone.home"];
+      return {
+        name: z.attributes.friendly_name || "Maison",
+        icon: z.attributes.icon || "mdi:home",
+      };
+    }
+    for (const k in hs) {
+      if (k.indexOf("zone.") !== 0) continue;
+      const fn = hs[k].attributes.friendly_name;
+      if (fn && fn.toLowerCase() === s) {
+        return { name: fn, icon: hs[k].attributes.icon || "mdi:map-marker" };
+      }
+    }
+    return s === "home" ? { name: "Maison", icon: "mdi:home" } : null;
   }
 
   _setAvatar(palette, initials, pic) {
