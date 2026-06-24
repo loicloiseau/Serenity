@@ -257,15 +257,22 @@ export class SerenityPersonCard extends HTMLElement {
       : c.away_label || "Sorti";
     els.status.classList.toggle("home", isHome);
 
-    // Location line (config wins; else derive from state)
+    // Location line (static config > bound entity > derived from state)
     let loc = c.location;
     let icon = c.location_icon;
+    if (!loc && c.location_entity) {
+      const lst = this._hass.states[c.location_entity];
+      if (lst && !NON_ZONE.has(String(lst.state).toLowerCase())) {
+        loc = titleCase(lst.state);
+        icon = icon || "mdi:map-marker-outline";
+      }
+    }
     if (!loc) {
       if (isHome) {
         loc = c.home_location || "Maison";
         icon = icon || "mdi:home-outline";
       } else if (!NON_ZONE.has(state)) {
-        loc = titleCase(state); // a named zone
+        loc = titleCase(state); // a named GPS zone
         icon = icon || "mdi:map-marker-outline";
       } else {
         loc = c.away_location || "Absent";
