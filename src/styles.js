@@ -13,27 +13,27 @@ export function cardStyles(type) {
       display: block;
     }
     ha-card {
-      padding: 14px 18px;
+      padding: 11px 16px;
       cursor: pointer;
       overflow: hidden;
     }
     .serenity {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 13px;
     }
     .icon-box {
       flex: 0 0 auto;
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
+      width: 40px;
+      height: 40px;
+      border-radius: 13px;
       background: var(--_soft);
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .icon-box ha-icon {
-      --mdc-icon-size: 24px;
+      --mdc-icon-size: 22px;
       color: var(--_accent);
     }
     .title-block {
@@ -66,7 +66,7 @@ export function cardStyles(type) {
     .chart {
       flex: 1 1 auto;
       min-width: 24px;
-      height: 38px;
+      height: 32px;
       display: flex;
       align-items: flex-end;
       gap: 3px;
@@ -91,7 +91,7 @@ export function cardStyles(type) {
       line-height: 1;
     }
     .num {
-      font-size: 30px;
+      font-size: 26px;
       font-weight: 800;
       letter-spacing: -0.5px;
       color: var(--_value);

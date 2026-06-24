@@ -183,7 +183,7 @@ export class SerenityClimateCard extends HTMLElement {
         --_ctrl: var(--serenity-control-bg, #f1f3f5);
         display: block;
       }
-      ha-card { padding: 16px 20px 18px; }
+      ha-card { padding: 12px 18px 12px; }
       .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
       .head { cursor: pointer; }
       .name { font-size: 16px; font-weight: 700; line-height: 1.2; color: var(--_value); }
@@ -198,9 +198,9 @@ export class SerenityClimateCard extends HTMLElement {
       }
       .btn ha-icon { --mdc-icon-size: 20px; }
       .btn.on { background: color-mix(in srgb, var(--_accent) 15%, transparent); color: var(--_accent); }
-      .thermo { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 16px 0 14px; }
+      .thermo { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 10px 0 10px; }
       .step {
-        width: 44px; height: 44px; border: none; border-radius: 50%;
+        width: 40px; height: 40px; border: none; border-radius: 50%;
         background: var(--_ctrl); color: var(--_value);
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; transition: transform 0.1s, background 0.2s;
@@ -209,10 +209,10 @@ export class SerenityClimateCard extends HTMLElement {
       .step:hover { background: color-mix(in srgb, var(--_value) 8%, var(--_ctrl)); }
       .step:active { transform: scale(0.92); }
       .target { display: flex; align-items: flex-start; min-width: 96px; justify-content: center; }
-      .t-num { font-size: 46px; font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--_value); }
-      .t-unit { font-size: 18px; font-weight: 700; color: var(--_muted); margin-left: 3px; margin-top: 3px; }
+      .t-num { font-size: 38px; font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--_value); }
+      .t-unit { font-size: 16px; font-weight: 700; color: var(--_muted); margin-left: 3px; margin-top: 3px; }
       .divider { height: 1px; background: var(--divider-color, #e6e8eb); }
-      .bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+      .bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
       .chip { display: flex; align-items: center; gap: 8px; background: none; border: none; padding: 0; cursor: pointer; }
       .chip-ico { width: 18px; height: 18px; color: var(--_accent); display: inline-flex; }
       .chip-ico svg { width: 100%; height: 100%; }
