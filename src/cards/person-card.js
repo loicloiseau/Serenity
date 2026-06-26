@@ -197,6 +197,7 @@ export class SerenityPersonCard extends HTMLElement {
       .right { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
       .status { font-size: 13.5px; font-weight: 600; color: var(--_muted); white-space: nowrap; }
       .status.home { color: var(--_home); }
+      .status.hidden { display: none; }
       .since { font-size: 12.5px; font-weight: 500; color: var(--_muted); margin-top: 3px; white-space: nowrap; }
       .since.hidden { display: none; }
       .unavail .name { color: var(--_muted); }
@@ -224,10 +225,11 @@ export class SerenityPersonCard extends HTMLElement {
       els.person.classList.add("unavail");
       this._setAvatar(AWAY_AV, initialsOf(name, c.initials), null);
       els.dot.style.background = "var(--_dot-away)";
-      els.status.textContent = c.unavailable_label || "Indisponible";
+      els.status.classList.add("hidden");
       els.status.classList.remove("home");
       els.loc.style.display = "none";
-      els.since.classList.add("hidden");
+      els.since.textContent = c.unavailable_label || "Indisponible";
+      els.since.classList.remove("hidden");
       return;
     }
     els.person.classList.remove("unavail");
@@ -248,10 +250,14 @@ export class SerenityPersonCard extends HTMLElement {
         : null;
     this._setAvatar(palette, initialsOf(name, c.initials), pic);
 
-    // Status dot + right-hand label
+    // Status dot
     els.dot.style.background = isHome
       ? "var(--_dot-home)"
       : "var(--_dot-away)";
+    // Right-hand status label is opt-in (default off): presence is conveyed
+    // by the dot colour and the location line.
+    const showStatus = c.show_status === true;
+    els.status.classList.toggle("hidden", !showStatus);
     els.status.textContent = isHome
       ? c.home_label || "À la maison"
       : c.away_label || "Sorti";
