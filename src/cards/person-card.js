@@ -130,12 +130,14 @@ export class SerenityPersonCard extends HTMLElement {
           <span class="pdot"></span>
         </div>
         <div class="mid">
-          <div class="name"></div>
-          <div class="loc"><ha-icon class="loc-ico"></ha-icon><span class="ltext"></span></div>
-        </div>
-        <div class="right">
-          <div class="status"></div>
-          <div class="since"></div>
+          <div class="toprow">
+            <div class="name"></div>
+            <div class="since"></div>
+          </div>
+          <div class="locrow">
+            <div class="loc"><ha-icon class="loc-ico"></ha-icon><span class="ltext"></span></div>
+            <div class="status"></div>
+          </div>
         </div>
       </div>`;
     root.appendChild(card);
@@ -188,18 +190,19 @@ export class SerenityPersonCard extends HTMLElement {
         border: 2.5px solid var(--ha-card-background, var(--card-background-color, #fff));
       }
       .mid { flex: 1 1 auto; min-width: 0; }
-      .name { font-size: 16px; font-weight: 700; line-height: 1.2; color: var(--_value);
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .loc { display: flex; align-items: center; gap: 5px; margin-top: 3px;
-        font-size: 13.5px; font-weight: 500; color: var(--_muted); min-width: 0; }
+      .toprow { display: flex; align-items: baseline; gap: 8px; }
+      .name { flex: 1 1 auto; min-width: 0; font-size: 16px; font-weight: 700; line-height: 1.2;
+        color: var(--_value); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .since { flex: 0 0 auto; font-size: 12.5px; font-weight: 500; color: var(--_muted); white-space: nowrap; }
+      .since.hidden { display: none; }
+      .locrow { display: flex; align-items: center; gap: 8px; margin-top: 3px; min-width: 0; }
+      .loc { display: flex; align-items: center; gap: 5px; min-width: 0; flex: 1 1 auto;
+        font-size: 13.5px; font-weight: 500; color: var(--_muted); }
       .loc-ico { --mdc-icon-size: 15px; flex: 0 0 auto; color: var(--_muted); }
       .ltext { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .right { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
-      .status { font-size: 13.5px; font-weight: 600; color: var(--_muted); white-space: nowrap; }
+      .status { flex: 0 0 auto; font-size: 12.5px; font-weight: 600; color: var(--_muted); white-space: nowrap; }
       .status.home { color: var(--_home); }
       .status.hidden { display: none; }
-      .since { font-size: 12.5px; font-weight: 500; color: var(--_muted); margin-top: 3px; white-space: nowrap; }
-      .since.hidden { display: none; }
       .unavail .name { color: var(--_muted); }
     `;
   }
