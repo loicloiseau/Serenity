@@ -112,9 +112,10 @@ export class SerenityGroupCard extends HTMLElement {
       }
       ha-card {
         padding: 11px 14px; cursor: pointer; overflow: hidden;
-        transition: background-color 0.25s ease;
+        transition: background-image 0.25s ease;
       }
-      ha-card.on { background-color: var(--_soft); }
+      /* Tint layered over the card background so shadow/elevation stay intact */
+      ha-card.on { background-image: linear-gradient(0deg, var(--_soft), var(--_soft)); }
       .row { display: flex; align-items: center; gap: 12px; min-width: 0; }
       .icon-box {
         flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px;
@@ -160,8 +161,8 @@ export class SerenityGroupCard extends HTMLElement {
 
     const accent = c.accent || "#3E9E6B";
     this.style.setProperty("--_accent", accent);
-    this.style.setProperty("--_soft", hexToRgba(accent, 0.1));
-    this.style.setProperty("--_soft2", hexToRgba(accent, 0.18));
+    this.style.setProperty("--_soft", hexToRgba(accent, 0.07));
+    this.style.setProperty("--_soft2", hexToRgba(accent, 0.16));
     els.card.classList.toggle("on", on);
   }
 

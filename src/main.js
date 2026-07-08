@@ -13,6 +13,10 @@ import "./cards/tile-card.js";
 import "./cards/group-card.js";
 import "./cards/entity-card.js";
 import "./cards/alarm-card.js";
+import "./cards/weather-card.js";
+import "./cards/alerts-card.js";
+import "./cards/scene-card.js";
+import "./cards/light-card.js";
 
 console.info(
   `%c SERENITY-CARDS %c v${VERSION} `,
