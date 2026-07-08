@@ -50,7 +50,7 @@ export class SerenityTileCard extends HTMLElement {
   }
 
   getGridOptions() {
-    return { columns: 6, rows: 2, min_columns: 3 };
+    return { columns: 6, rows: "auto", min_columns: 3 };
   }
 
   static getStubConfig() {

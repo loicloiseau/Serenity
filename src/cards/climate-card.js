@@ -183,36 +183,36 @@ export class SerenityClimateCard extends HTMLElement {
         --_ctrl: var(--serenity-control-bg, #f1f3f5);
         display: block;
       }
-      ha-card { padding: 12px 18px 12px; }
+      ha-card { padding: 10px 16px 10px; }
       .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
       .head { cursor: pointer; }
-      .name { font-size: 16px; font-weight: 700; line-height: 1.2; color: var(--_value); }
-      .status { display: flex; align-items: center; gap: 6px; margin-top: 5px; font-size: 13px; font-weight: 500; color: var(--_muted); }
+      .name { font-size: 15px; font-weight: 700; line-height: 1.2; color: var(--_value); }
+      .status { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12.5px; font-weight: 500; color: var(--_muted); }
       .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--_accent); flex: 0 0 auto; }
       .actions { display: flex; gap: 8px; flex: 0 0 auto; }
       .btn {
-        width: 40px; height: 34px; border: none; border-radius: 11px;
+        width: 38px; height: 32px; border: none; border-radius: 10px;
         background: var(--_ctrl); color: var(--_muted);
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; transition: background 0.2s, color 0.2s;
       }
       .btn ha-icon { --mdc-icon-size: 20px; }
       .btn.on { background: color-mix(in srgb, var(--_accent) 15%, transparent); color: var(--_accent); }
-      .thermo { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 10px 0 10px; }
+      .thermo { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 8px 0 8px; }
       .step {
-        width: 40px; height: 40px; border: none; border-radius: 50%;
+        width: 36px; height: 36px; border: none; border-radius: 50%;
         background: var(--_ctrl); color: var(--_value);
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; transition: transform 0.1s, background 0.2s;
       }
-      .step ha-icon { --mdc-icon-size: 22px; }
+      .step ha-icon { --mdc-icon-size: 20px; }
       .step:hover { background: color-mix(in srgb, var(--_value) 8%, var(--_ctrl)); }
       .step:active { transform: scale(0.92); }
       .target { display: flex; align-items: flex-start; min-width: 96px; justify-content: center; }
-      .t-num { font-size: 38px; font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--_value); }
-      .t-unit { font-size: 16px; font-weight: 700; color: var(--_muted); margin-left: 3px; margin-top: 3px; }
+      .t-num { font-size: 31px; font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--_value); }
+      .t-unit { font-size: 14px; font-weight: 700; color: var(--_muted); margin-left: 3px; margin-top: 3px; }
       .divider { height: 1px; background: var(--divider-color, #e6e8eb); }
-      .bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+      .bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
       .chip { display: flex; align-items: center; gap: 8px; background: none; border: none; padding: 0; cursor: pointer; }
       .chip-ico { width: 18px; height: 18px; color: var(--_accent); display: inline-flex; }
       .chip-ico svg { width: 100%; height: 100%; }

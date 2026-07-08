@@ -13,35 +13,35 @@ export function cardStyles(type) {
       display: block;
     }
     ha-card {
-      padding: 11px 16px;
+      padding: 9px 14px;
       cursor: pointer;
       overflow: hidden;
     }
     .serenity {
       display: flex;
       align-items: center;
-      gap: 13px;
+      gap: 12px;
     }
     .icon-box {
       flex: 0 0 auto;
-      width: 40px;
-      height: 40px;
-      border-radius: 13px;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
       background: var(--_soft);
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .icon-box ha-icon {
-      --mdc-icon-size: 22px;
+      --mdc-icon-size: 20px;
       color: var(--_accent);
     }
     .title-block {
       flex: 0 0 auto;
-      min-width: 88px;
+      min-width: 80px;
     }
     .name {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       line-height: 1.2;
       color: var(--_value);
@@ -51,8 +51,8 @@ export function cardStyles(type) {
       display: flex;
       align-items: center;
       gap: 6px;
-      margin-top: 4px;
-      font-size: 13px;
+      margin-top: 3px;
+      font-size: 12.5px;
       font-weight: 500;
       color: var(--_muted);
     }
@@ -66,7 +66,7 @@ export function cardStyles(type) {
     .chart {
       flex: 1 1 auto;
       min-width: 24px;
-      height: 32px;
+      height: 26px;
       display: flex;
       align-items: flex-end;
       gap: 3px;
@@ -91,13 +91,13 @@ export function cardStyles(type) {
       line-height: 1;
     }
     .num {
-      font-size: 26px;
+      font-size: 22px;
       font-weight: 800;
       letter-spacing: -0.5px;
       color: var(--_value);
     }
     .unit {
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 700;
       margin-left: 2px;
       margin-top: 2px;
@@ -107,8 +107,8 @@ export function cardStyles(type) {
       display: flex;
       align-items: center;
       gap: 4px;
-      margin-top: 6px;
-      font-size: 13px;
+      margin-top: 5px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--_accent);
       white-space: nowrap;
