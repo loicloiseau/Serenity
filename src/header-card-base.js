@@ -1,4 +1,4 @@
-import { countEntities, countText } from "./header-utils.js";
+import { countEntities, countText, greetingText } from "./header-utils.js";
 
 /**
  * Shared logic for header cards. A subclass sets `static variant = "title" | "subtitle"`.
@@ -212,8 +212,11 @@ export class SerenityHeaderCardBase extends HTMLElement {
         : c.title_size
       : "";
 
-    // Secondary (inline muted text)
-    const sec = this._resolveCountable(c.secondary);
+    // Secondary (inline muted text); "greeting" renders a time-of-day hello
+    const sec =
+      c.secondary === "greeting"
+        ? greetingText(this._hass)
+        : this._resolveCountable(c.secondary);
     els.secondary.textContent = sec || "";
     els.secondary.classList.toggle("hidden", !sec);
     els.secondary.style.color = c.secondary_color || "";
@@ -260,11 +263,18 @@ export class SerenityHeaderCardBase extends HTMLElement {
     }
   }
 
-  /** Resolve a string | count-spec into display text. */
+  /** Resolve a string | count-spec | entity-spec into display text. */
   _resolveCountable(value) {
     if (value == null) return null;
     if (typeof value === "string") return value;
     if (typeof value === "number") return String(value);
+    if (value.entity) {
+      const st = this._hass && this._hass.states[value.entity];
+      const s = st ? st.state : "—";
+      if (value.map && value.map[s] != null) return String(value.map[s]);
+      if (value.format) return String(value.format).replace(/\{state\}/g, s);
+      return s;
+    }
     if (value.entities || value.domain)
       return countText(countEntities(this._hass, value), value);
     if (value.text != null) return String(value.text);
@@ -294,6 +304,10 @@ export class SerenityHeaderCardBase extends HTMLElement {
       );
     } else if (ta.action === "url" && ta.url_path) {
       window.open(ta.url_path, ta.new_tab === false ? "_self" : "_blank");
+    } else if (ta.action === "menu") {
+      this.dispatchEvent(
+        new CustomEvent("hass-toggle-menu", { bubbles: true, composed: true })
+      );
     } else if (ta.action === "toggle") {
       const ent = ta.entity || fallbackEntity || this._config.entity;
       if (ent && this._hass)

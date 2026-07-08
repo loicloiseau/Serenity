@@ -48,9 +48,55 @@ export function countEntities(hass, spec) {
   return n;
 }
 
-/** Render a count into text: `format` ("{n} active") wins, else `${n} ${suffix}`. */
+/**
+ * Render a count into text. Tokens: {n} = count, {s} = "s" when n > 1.
+ * `format_zero` / `format_one` override `format` for those counts,
+ * else `format` wins, else `${n} ${suffix}`.
+ */
 export function countText(n, spec) {
-  if (spec.format) return String(spec.format).replace(/\{n\}/g, n);
+  const rep = (t) =>
+    String(t)
+      .replace(/\{n\}/g, n)
+      .replace(/\{s\}/g, n > 1 ? "s" : "");
+  if (n === 0 && spec.format_zero != null) return rep(spec.format_zero);
+  if (n === 1 && spec.format_one != null) return rep(spec.format_one);
+  if (spec.format) return rep(spec.format);
   const suffix = spec.suffix != null ? ` ${spec.suffix}` : "";
   return `${n}${suffix}`;
+}
+
+/** True when a state should be considered "active" (not off/idle/…). */
+export function isActiveState(state) {
+  return !INACTIVE.has(String(state).toLowerCase());
+}
+
+/** Time-of-day greeting, personalised with the HA user's first name. */
+export function greetingText(hass) {
+  const h = new Date().getHours();
+  const g =
+    h >= 5 && h < 12
+      ? "Bonjour"
+      : h >= 12 && h < 18
+        ? "Bonne après-midi"
+        : "Bonsoir";
+  const name =
+    hass && hass.user && hass.user.name ? hass.user.name.split(" ")[0] : "";
+  return name ? `${g}, ${name}` : g;
+}
+
+/** French relative time: "à l'instant", "il y a 18 min", "14:32", "hier 09:10", "3 mars". */
+export function relativeTime(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  const now = new Date();
+  const min = Math.floor((now - d) / 60000);
+  if (min < 1) return "à l'instant";
+  if (min < 60) return `il y a ${min} min`;
+  const hm = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  if (d.toDateString() === now.toDateString()) return hm;
+  const yest = new Date(now);
+  yest.setDate(yest.getDate() - 1);
+  if (d.toDateString() === yest.toDateString()) return `hier ${hm}`;
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }

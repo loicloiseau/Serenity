@@ -9,6 +9,10 @@ import "./cards/thermostat-card.js";
 import "./cards/person-card.js";
 import "./cards/title-card.js";
 import "./cards/subtitle-card.js";
+import "./cards/tile-card.js";
+import "./cards/group-card.js";
+import "./cards/entity-card.js";
+import "./cards/alarm-card.js";
 
 console.info(
   `%c SERENITY-CARDS %c v${VERSION} `,
