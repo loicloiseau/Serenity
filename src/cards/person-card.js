@@ -98,7 +98,7 @@ export class SerenityPersonCard extends HTMLElement {
 
   // Modern sections view: default to half width so two fit per row.
   getGridOptions() {
-    return { columns: 6, rows: 1, min_columns: 3 };
+    return { columns: 6, rows: "auto", min_columns: 3 };
   }
 
   static getStubConfig(hass) {

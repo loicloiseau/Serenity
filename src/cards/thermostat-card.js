@@ -207,69 +207,69 @@ export class SerenityThermostatCard extends HTMLElement {
         display: block;
         font-family: var(--_font);
       }
-      ha-card { padding: 14px 16px 14px; border-radius: var(--ha-card-border-radius, 20px); }
+      ha-card { padding: 12px 14px; border-radius: var(--ha-card-border-radius, 18px); }
 
       /* Header */
       .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
-      .hleft { display: flex; align-items: center; gap: 11px; min-width: 0; }
+      .hleft { display: flex; align-items: center; gap: 10px; min-width: 0; }
       .icon-box {
-        flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px;
+        flex: 0 0 auto; width: 34px; height: 34px; border-radius: 11px;
         background: var(--_soft); display: flex; align-items: center; justify-content: center;
       }
-      .icon-box ha-icon { --mdc-icon-size: 20px; color: var(--_accent); }
+      .icon-box ha-icon { --mdc-icon-size: 18px; color: var(--_accent); }
       .htext { min-width: 0; }
-      .name { font-size: 16px; font-weight: 700; line-height: 1.2; color: var(--_value); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .sub { font-size: 13px; font-weight: 500; color: var(--_muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .name { font-size: 15px; font-weight: 700; line-height: 1.2; color: var(--_value); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .sub { font-size: 12.5px; font-weight: 500; color: var(--_muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .sub.hidden { display: none; }
       .iconbtn {
-        flex: 0 0 auto; width: 38px; height: 38px; border: none; padding: 0; cursor: pointer;
-        border-radius: 12px; background: var(--_soft); color: var(--_accent);
+        flex: 0 0 auto; width: 34px; height: 34px; border: none; padding: 0; cursor: pointer;
+        border-radius: 11px; background: var(--_soft); color: var(--_accent);
         display: flex; align-items: center; justify-content: center;
         transition: background 0.2s ease, color 0.2s ease, transform 0.05s ease;
       }
-      .iconbtn ha-icon { --mdc-icon-size: 20px; }
+      .iconbtn ha-icon { --mdc-icon-size: 18px; }
       .iconbtn:active { transform: scale(0.94); }
       .iconbtn.off { background: var(--_tile); color: var(--_muted); }
 
       /* Dial */
-      .dial { position: relative; display: flex; align-items: center; justify-content: center; margin: 2px 0 2px; }
-      .gauge { width: 100%; max-width: 184px; height: auto; display: block; transform: rotate(135deg); }
-      .track { fill: none; stroke: var(--_track); stroke-width: 14; stroke-linecap: round; }
-      .prog { fill: none; stroke: var(--_accent); stroke-width: 14; stroke-linecap: round; transition: stroke-dasharray 0.45s ease, stroke 0.3s ease; }
+      .dial { position: relative; display: flex; align-items: center; justify-content: center; margin: 0; }
+      .gauge { width: 100%; max-width: 148px; height: auto; display: block; transform: rotate(135deg); }
+      .track { fill: none; stroke: var(--_track); stroke-width: 12; stroke-linecap: round; }
+      .prog { fill: none; stroke: var(--_accent); stroke-width: 12; stroke-linecap: round; transition: stroke-dasharray 0.45s ease, stroke 0.3s ease; }
       .center {
         position: absolute; display: flex; flex-direction: column; align-items: center;
-        gap: 6px; transform: translateY(-4px); pointer-events: none;
+        gap: 4px; transform: translateY(-3px); pointer-events: none;
       }
-      .consigne { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; color: var(--_muted); }
+      .consigne { font-size: 9.5px; font-weight: 700; letter-spacing: 0.13em; color: var(--_muted); }
       .value { display: flex; align-items: flex-start; color: var(--_value); line-height: 1; }
-      .num { font-size: 42px; font-weight: 800; letter-spacing: -1.5px; }
-      .deg { font-size: 18px; font-weight: 700; color: var(--_muted); margin-top: 4px; }
+      .num { font-size: 33px; font-weight: 800; letter-spacing: -1px; }
+      .deg { font-size: 15px; font-weight: 700; color: var(--_muted); margin-top: 3px; }
       .pill {
-        display: inline-flex; align-items: center; gap: 6px;
-        background: var(--_soft); padding: 4px 11px; border-radius: 999px;
+        display: inline-flex; align-items: center; gap: 5px;
+        background: var(--_soft); padding: 3px 10px; border-radius: 999px;
       }
       .pill.hidden { display: none; }
-      .pdot { width: 6px; height: 6px; border-radius: 50%; background: var(--_accent); }
-      .ptext { font-size: 12.5px; font-weight: 600; color: var(--_accent); }
+      .pdot { width: 5px; height: 5px; border-radius: 50%; background: var(--_accent); }
+      .ptext { font-size: 11.5px; font-weight: 600; color: var(--_accent); }
 
       /* Steppers */
-      .steppers { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 2px 0 12px; }
+      .steppers { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0 0 10px; }
       .step {
-        width: 48px; height: 48px; border: none; padding: 0; cursor: pointer;
-        border-radius: 15px; display: flex; align-items: center; justify-content: center;
+        width: 42px; height: 42px; border: none; padding: 0; cursor: pointer;
+        border-radius: 13px; display: flex; align-items: center; justify-content: center;
         transition: background 0.2s ease, transform 0.05s ease;
       }
-      .step ha-icon { --mdc-icon-size: 22px; }
+      .step ha-icon { --mdc-icon-size: 20px; }
       .step.minus { background: var(--_tile); color: var(--_value); }
       .step.plus { background: var(--_soft); color: var(--_accent); }
       .step:active { transform: scale(0.93); }
 
       /* Tiles */
-      .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-      .tile { background: var(--_tile); border-radius: 14px; padding: 10px 13px; }
-      .tlabel { font-size: 12.5px; font-weight: 500; color: var(--_muted); }
-      .tval { margin-top: 3px; color: var(--_value); display: flex; align-items: baseline; }
-      .tval .cur-num, .tval .hum-num { font-size: 19px; font-weight: 800; letter-spacing: -0.5px; }
+      .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .tile { background: var(--_tile); border-radius: 12px; padding: 8px 12px; }
+      .tlabel { font-size: 12px; font-weight: 500; color: var(--_muted); }
+      .tval { margin-top: 2px; color: var(--_value); display: flex; align-items: baseline; }
+      .tval .cur-num, .tval .hum-num { font-size: 17px; font-weight: 800; letter-spacing: -0.4px; }
       .tunit { font-size: 13px; font-weight: 600; color: var(--_muted); margin-left: 2px; }
       .tile.hidden { display: none; }
       .tiles.single { grid-template-columns: 1fr; }

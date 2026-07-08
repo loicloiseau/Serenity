@@ -58,9 +58,9 @@ export class SerenityLightCard extends HTMLElement {
 
   getGridOptions() {
     if (this._config && this._config.full_width === true) {
-      return { columns: 12, rows: 1, min_columns: 6 };
+      return { columns: 12, rows: "auto", min_columns: 6 };
     }
-    return { columns: 6, rows: 1, min_columns: 3 };
+    return { columns: 6, rows: "auto", min_columns: 3 };
   }
 
   static getStubConfig(hass) {
