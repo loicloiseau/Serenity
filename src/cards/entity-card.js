@@ -82,6 +82,9 @@ export class SerenityEntityCard extends HTMLElement {
   }
 
   getGridOptions() {
+    if (this._config && this._config.full_width === true) {
+      return { columns: 12, rows: 1, min_columns: 6 };
+    }
     return { columns: 6, rows: 1, min_columns: 3 };
   }
 
@@ -144,9 +147,10 @@ export class SerenityEntityCard extends HTMLElement {
       }
       ha-card {
         height: 100%; box-sizing: border-box; padding: 11px 14px; cursor: pointer;
-        overflow: hidden; transition: background-color 0.25s ease;
+        overflow: hidden; transition: background-image 0.25s ease;
       }
-      ha-card.on.tint { background-color: var(--_soft); }
+      /* Tint layered over the card background so shadow/elevation stay intact */
+      ha-card.on.tint { background-image: linear-gradient(0deg, var(--_soft), var(--_soft)); }
       .row { display: flex; align-items: center; gap: 12px; min-width: 0; height: 100%; }
       .icon-box {
         flex: 0 0 auto; width: 40px; height: 40px; border-radius: 13px;
@@ -211,8 +215,8 @@ export class SerenityEntityCard extends HTMLElement {
 
     const accent = c.accent || (meta && meta.accent) || "#3F9E6B";
     this.style.setProperty("--_accent", accent);
-    this.style.setProperty("--_soft", hexToRgba(accent, 0.12));
-    this.style.setProperty("--_soft2", hexToRgba(accent, 0.18));
+    this.style.setProperty("--_soft", hexToRgba(accent, 0.08));
+    this.style.setProperty("--_soft2", hexToRgba(accent, 0.16));
     els.card.classList.toggle("on", on);
     els.card.classList.toggle("tint", c.tint !== false);
 
