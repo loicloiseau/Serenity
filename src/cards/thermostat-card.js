@@ -202,10 +202,10 @@ export class SerenityThermostatCard extends HTMLElement {
       :host {
         --_accent: var(--serenity-thermostat-color, #E0813F);
         --_soft: var(--serenity-thermostat-soft, rgba(224, 129, 63, 0.14));
-        --_track: var(--serenity-thermostat-track, #E8EBE9);
+        --_track: var(--serenity-thermostat-track, rgba(120, 130, 138, 0.16));
         --_value: var(--serenity-value-color, var(--primary-text-color, #16201b));
         --_muted: var(--serenity-muted-color, var(--secondary-text-color, #9aa3af));
-        --_tile: var(--serenity-tile-bg, #f3f5f4);
+        --_tile: var(--serenity-tile-bg, rgba(120, 130, 138, 0.10));
         --_font: var(--serenity-header-font, "Inter", "Roboto", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif);
         display: block;
         font-family: var(--_font);
