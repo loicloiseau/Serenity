@@ -136,6 +136,15 @@ export class SerenityGraphCard extends HTMLElement {
         <span class="mm max"></span>
       </div>`;
     root.appendChild(card);
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      card.animate(
+        [
+          { opacity: 0, transform: "translateY(4px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 240, easing: "ease-out" }
+      );
+    }
 
     const $ = (s) => root.querySelector(s);
     this._els = {
@@ -185,6 +194,13 @@ export class SerenityGraphCard extends HTMLElement {
       .num { font-size: 24px; font-weight: 800; letter-spacing: -0.6px; color: var(--_value); }
       .unit { font-size: 13px; font-weight: 700; color: var(--_muted); margin-left: 2px; margin-top: 2px; }
       .chart { width: 100%; height: 78px; display: block; margin-top: 10px; }
+      .chart.loading {
+        border-radius: 10px;
+        background: linear-gradient(90deg, var(--_plate) 25%, rgba(120, 130, 138, 0.18) 50%, var(--_plate) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.2s linear infinite;
+      }
+      @keyframes shimmer { to { background-position: -200% 0; } }
       .line { stroke: var(--_accent); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
         vector-effect: non-scaling-stroke; }
       .foot { display: flex; justify-content: space-between; margin-top: 6px; }
@@ -259,13 +275,16 @@ export class SerenityGraphCard extends HTMLElement {
     if (!this._built) return;
     const els = this._els;
     const data = this._history;
+    const chart = this.shadowRoot.querySelector(".chart");
     if (!data || data.length < 2) {
+      chart.classList.add("loading");
       els.area.setAttribute("d", "");
       els.line.setAttribute("d", "");
       els.min.textContent = "";
       els.max.textContent = "";
       return;
     }
+    chart.classList.remove("loading");
 
     // Downsample to ~60 buckets for a clean curve.
     const buckets = 60;

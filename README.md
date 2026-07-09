@@ -1,6 +1,8 @@
 # Serenity Cards
 
-A cohesive suite of **16 Lovelace cards** for Home Assistant, designed for the *Serenity* look: soft accents, rounded plates, French labels and thumb-friendly controls. Everything ships in a single bundle — one resource, sixteen cards.
+![Serenity Cards preview](docs/preview.svg)
+
+A cohesive suite of **19 Lovelace cards** for Home Assistant, designed for the *Serenity* look: soft accents, rounded plates, French labels and thumb-friendly controls. Everything ships in a single bundle — one resource, sixteen cards.
 
 | Card | Type | What it does |
 |---|---|---|
@@ -19,6 +21,9 @@ A cohesive suite of **16 Lovelace cards** for Home Assistant, designed for the *
 | Media | `custom:serenity-media-card` | Artwork, transport controls, draggable volume, player chips |
 | Thermostat | `custom:serenity-thermostat-card` | Circular set-point gauge, steppers, temp/humidity stats |
 | Climate | `custom:serenity-climate-card` | AC/heat-pump control with popup mode/fan/swing menus |
+| Graph | `custom:serenity-graph-card` | Smooth gradient history curve with min/max |
+| Cover | `custom:serenity-cover-card` | Up/stop/down, drag-to-position fill |
+| Timer | `custom:serenity-timer-card` | Countdown with progress fill and preset chips |
 | Temperature / Humidity | `custom:serenity-temperature-card` / `-humidity-card` | Value, history bars, trend |
 
 ---
@@ -108,7 +113,7 @@ name: Porte entrée
 
 ### Light
 
-The card itself is the slider: **tap** toggles, **drag horizontally** dims with a soft fill, **hold** opens more-info.
+The card itself is the slider: **tap** toggles, **drag horizontally** dims with a soft fill, **hold** opens a Serenity popup with a fine slider plus white-temperature and colour presets (`popup: false` restores the native more-info).
 
 ```yaml
 type: custom:serenity-light-card
@@ -136,6 +141,8 @@ The person's state **is** the GPS zone; the card resolves the matching `zone.*` 
 type: custom:serenity-person-card
 entity: person.loic
 show_picture: true
+battery_entity: sensor.phone_loic_battery_level   # phone battery pill
+distance_entity: sensor.loic_distance             # shown while away
 # name, initials, color, show_status: true, show_since: false, home_states
 ```
 
@@ -154,6 +161,7 @@ unavailable_entities: [...]
 alerts:                      # custom rules
   - { entity: sensor.x, below: 5, message: "…", icon: mdi:alert, color: "#E0A95B" }
 # expanded: true, max_alerts: 8, storage_key, clear_all_label, dismissed_message
+# snooze_hours: 8      # X hides for N hours instead of until the state changes
 ```
 
 ### Alarm
@@ -223,6 +231,36 @@ entity: climate.ac_salle_a_mange
 # accent, step, unit, setpoint_attribute
 ```
 
+### Graph
+
+```yaml
+type: custom:serenity-graph-card
+entity: sensor.living_room_thermometer_temperature
+name: Température salon
+accent: "#E0813F"
+hours: 24
+# unit, decimals, icon
+```
+
+### Cover
+
+```yaml
+type: custom:serenity-cover-card
+entity: cover.volet_salon
+name: Volet salon
+# full_width: true, accent, icon — drag to set position, hold = more-info
+```
+
+### Timer
+
+```yaml
+type: custom:serenity-timer-card
+entity: timer.cuisine
+name: Minuteur cuisine
+presets: [5, 10, 30]     # minutes
+# full_width: true, accent, icon
+```
+
 ### Temperature & Humidity
 
 ```yaml
@@ -243,6 +281,14 @@ Cards report their size to HA's **sections** grid: person / entity / light / til
 All colours derive from HA theme variables with Serenity fallbacks, and adapt to dark themes. Override globally:
 
 `--serenity-header-color`, `--serenity-value-color`, `--serenity-muted-color`, `--serenity-header-font`, `--serenity-tile-plate`, `--serenity-tile-bg`, `--serenity-button-bg`, `--serenity-rule-color`, `--serenity-person-home`, `--serenity-thermostat-color`, `--serenity-climate-color`, `--serenity-media-color`, `--serenity-ok-color`.
+
+## Screenshots
+
+Drop your own captures in `docs/` and reference them here — the preview banner above is generated from `docs/preview.svg`.
+
+## Visual editors
+
+Every main card ships a UI editor (pencil in the dashboard editor) built on HA's native `ha-form`. Advanced specs (count-specs, buttons, scenes, custom alert rules) stay YAML-only.
 
 ## Development
 

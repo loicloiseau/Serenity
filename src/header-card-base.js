@@ -67,6 +67,15 @@ export class SerenityHeaderCardBase extends HTMLElement {
         </div>
       </div>`;
     root.appendChild(card);
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      card.animate(
+        [
+          { opacity: 0, transform: "translateY(4px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 240, easing: "ease-out" }
+      );
+    }
 
     const $ = (s) => root.querySelector(s);
     this._els = {

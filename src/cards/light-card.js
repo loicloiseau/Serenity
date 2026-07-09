@@ -3,8 +3,9 @@
  *
  * A light row in the Serenity style: icon plate, name and brightness.
  * Tap toggles, dragging horizontally dims (the card itself is the
- * slider, with a soft accent fill), long-press opens more-info.
- * The on-tint is deliberately gentle. Fits two-up by default.
+ * slider, with a soft accent fill). Long-press opens a Serenity popup
+ * with a fine brightness slider, white-temperature and colour presets
+ * (popup: false restores the native more-info). Fits two-up by default.
  */
 
 function hexToRgba(hex, a) {
@@ -22,6 +23,28 @@ function hexToRgba(hex, a) {
 const DRAG_THRESHOLD = 8; // px before a press becomes a drag
 const HOLD_MS = 550;
 
+// White-temperature presets (Kelvin) with an approximate chip colour.
+const TEMPS = [
+  { k: 2700, c: "#FFB46B" },
+  { k: 3200, c: "#FFC98F" },
+  { k: 4000, c: "#FFE3BD" },
+  { k: 5000, c: "#F3F0E7" },
+  { k: 6200, c: "#DDE9F7" },
+];
+
+// Colour presets (rgb).
+const COLORS = [
+  [224, 107, 91],
+  [226, 169, 60],
+  [63, 158, 107],
+  [91, 155, 245],
+  [139, 111, 208],
+  [210, 103, 160],
+  [255, 255, 255],
+];
+
+const COLOR_MODES = new Set(["hs", "rgb", "rgbw", "rgbww", "xy"]);
+
 export class SerenityLightCard extends HTMLElement {
   constructor() {
     super();
@@ -30,6 +53,7 @@ export class SerenityLightCard extends HTMLElement {
     this._drag = null;
     this._optimisticPct = null;
     this._optimisticUntil = 0;
+    this._popupDrag = false;
   }
 
   setConfig(config) {
@@ -50,6 +74,10 @@ export class SerenityLightCard extends HTMLElement {
   connectedCallback() {
     this._ensureBuilt();
     if (this._hass) this._update();
+  }
+
+  disconnectedCallback() {
+    this._closePopup();
   }
 
   getCardSize() {
@@ -91,6 +119,15 @@ export class SerenityLightCard extends HTMLElement {
         </div>
       </div>`;
     root.appendChild(card);
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      card.animate(
+        [
+          { opacity: 0, transform: "translateY(4px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 240, easing: "ease-out" }
+      );
+    }
 
     const $ = (s) => root.querySelector(s);
     this._els = {
@@ -151,6 +188,62 @@ export class SerenityLightCard extends HTMLElement {
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       ha-card.on .state { color: var(--_accent); font-weight: 600; }
       ha-card.unavail .name { color: var(--_muted); }
+
+      /* ------------------------- popup panel ------------------------- */
+      .popup { position: fixed; inset: 0; z-index: 999; display: flex;
+        align-items: center; justify-content: center; }
+      .popup.hidden { display: none; }
+      .backdrop { position: absolute; inset: 0; background: rgba(14, 19, 16, 0.42);
+        backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+      .panel {
+        position: relative; width: min(340px, 88vw); box-sizing: border-box;
+        background: var(--ha-card-background, var(--card-background-color, #fff));
+        border-radius: 22px; padding: 18px 18px 16px;
+        box-shadow: 0 18px 50px rgba(10, 16, 12, 0.30);
+        animation: pop-in 0.18s ease;
+        font-family: var(--_font);
+      }
+      @keyframes pop-in { from { opacity: 0; transform: scale(0.94) translateY(6px); } to { opacity: 1; transform: none; } }
+      .p-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+      .p-name { flex: 1 1 auto; min-width: 0; font-size: 16px; font-weight: 700;
+        letter-spacing: -0.2px; color: var(--_value);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .p-btn {
+        flex: 0 0 auto; width: 36px; height: 36px; border: none; padding: 0; cursor: pointer;
+        border-radius: 12px; background: var(--_plate); color: var(--_muted);
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .p-btn ha-icon { --mdc-icon-size: 19px; }
+      .p-btn.p-power.on { background: var(--_soft2); color: var(--_accent); }
+      .p-slider {
+        position: relative; height: 52px; border-radius: 16px;
+        background: var(--_plate); overflow: hidden; cursor: pointer;
+        touch-action: none; user-select: none; -webkit-user-select: none;
+      }
+      .p-slider .p-fill {
+        position: absolute; inset: 0; width: var(--_ppct, 0%);
+        background: var(--_soft3); transition: width 0.1s ease;
+      }
+      .p-slider.dragging .p-fill { transition: none; }
+      .p-slider .p-pct {
+        position: absolute; inset: 0; display: flex; align-items: center;
+        padding-left: 16px; font-size: 15px; font-weight: 700; color: var(--_value);
+        pointer-events: none;
+      }
+      .p-sec {
+        margin: 14px 0 7px; font-size: 10.5px; font-weight: 700;
+        letter-spacing: 0.1em; text-transform: uppercase; color: var(--_muted);
+      }
+      .p-row { display: flex; gap: 9px; }
+      .p-row.hidden, .p-sec.hidden { display: none; }
+      .chip {
+        flex: 1 1 0; height: 34px; border: none; cursor: pointer;
+        border-radius: 12px; padding: 0;
+        transition: transform 0.08s ease, box-shadow 0.15s ease;
+        box-shadow: inset 0 0 0 1px rgba(20, 26, 22, 0.08);
+      }
+      .chip:active { transform: scale(0.92); }
     `;
   }
 
@@ -160,10 +253,12 @@ export class SerenityLightCard extends HTMLElement {
       : null;
   }
 
+  _modes(st) {
+    return (st && st.attributes.supported_color_modes) || [];
+  }
+
   _dimmable(st) {
-    const modes =
-      (st && st.attributes.supported_color_modes) || [];
-    return modes.some((m) => m !== "onoff");
+    return this._modes(st).some((m) => m !== "onoff");
   }
 
   _pct(st) {
@@ -207,6 +302,7 @@ export class SerenityLightCard extends HTMLElement {
     this.style.setProperty("--_accent", accent);
     this.style.setProperty("--_soft", hexToRgba(accent, 0.10));
     this.style.setProperty("--_soft2", hexToRgba(accent, 0.16));
+    this.style.setProperty("--_soft3", hexToRgba(accent, 0.28));
 
     els.card.classList.toggle("on", on);
     this.style.setProperty("--_pct", on && dim ? `${pct}%` : on ? "100%" : "0%");
@@ -215,6 +311,8 @@ export class SerenityLightCard extends HTMLElement {
         ? `${pct} %`
         : "Allumée"
       : "Éteinte";
+
+    this._syncPopup(st, on, pct);
   }
 
   /* --------------------------- interactions --------------------------- */
@@ -233,7 +331,8 @@ export class SerenityLightCard extends HTMLElement {
     this._holdTimer = window.setTimeout(() => {
       if (this._drag && !this._drag.moved) {
         this._drag = null;
-        this._moreInfo();
+        if (this._config.popup === false) this._moreInfo();
+        else this._openPopup();
       }
     }, HOLD_MS);
   }
@@ -269,16 +368,7 @@ export class SerenityLightCard extends HTMLElement {
     if (!this._hass) return;
 
     if (d.moved && d.pct != null) {
-      if (d.pct === 0) {
-        this._hass.callService("light", "turn_off", {
-          entity_id: this._config.entity,
-        });
-      } else {
-        this._hass.callService("light", "turn_on", {
-          entity_id: this._config.entity,
-          brightness_pct: d.pct,
-        });
-      }
+      this._setBrightness(d.pct);
     } else {
       this._hass.callService("light", "toggle", {
         entity_id: this._config.entity,
@@ -291,6 +381,157 @@ export class SerenityLightCard extends HTMLElement {
     this._drag = null;
     this._els.card.classList.remove("dragging");
     this._update();
+  }
+
+  _setBrightness(pct) {
+    if (pct === 0) {
+      this._hass.callService("light", "turn_off", {
+        entity_id: this._config.entity,
+      });
+    } else {
+      this._hass.callService("light", "turn_on", {
+        entity_id: this._config.entity,
+        brightness_pct: pct,
+      });
+    }
+  }
+
+  /* ----------------------------- popup ----------------------------- */
+
+  _openPopup() {
+    const st = this._entity();
+    if (!st) return;
+    const root = this.shadowRoot;
+
+    if (!this._popup) {
+      const pop = document.createElement("div");
+      pop.className = "popup hidden";
+      pop.innerHTML = `
+        <div class="backdrop"></div>
+        <div class="panel">
+          <div class="p-head">
+            <div class="p-name"></div>
+            <button class="p-btn p-power" title="Allumer / éteindre"><ha-icon icon="mdi:power"></ha-icon></button>
+            <button class="p-btn p-close" title="Fermer"><ha-icon icon="mdi:close"></ha-icon></button>
+          </div>
+          <div class="p-slider"><div class="p-fill"></div><span class="p-pct"></span></div>
+          <div class="p-sec temps-sec">Blancs</div>
+          <div class="p-row temps"></div>
+          <div class="p-sec colors-sec">Couleurs</div>
+          <div class="p-row colors"></div>
+        </div>`;
+      root.appendChild(pop);
+      this._popup = {
+        el: pop,
+        name: pop.querySelector(".p-name"),
+        power: pop.querySelector(".p-power"),
+        slider: pop.querySelector(".p-slider"),
+        pct: pop.querySelector(".p-pct"),
+        tempsSec: pop.querySelector(".temps-sec"),
+        temps: pop.querySelector(".temps"),
+        colorsSec: pop.querySelector(".colors-sec"),
+        colors: pop.querySelector(".colors"),
+      };
+
+      pop.querySelector(".backdrop").addEventListener("click", () =>
+        this._closePopup()
+      );
+      pop.querySelector(".p-close").addEventListener("click", () =>
+        this._closePopup()
+      );
+      this._popup.power.addEventListener("click", () => {
+        this._hass.callService("light", "toggle", {
+          entity_id: this._config.entity,
+        });
+      });
+
+      // Popup brightness slider: absolute position → percentage.
+      const slider = this._popup.slider;
+      const fromEvent = (e, commit) => {
+        const rect = slider.getBoundingClientRect();
+        let pct = ((e.clientX - rect.left) / rect.width) * 100;
+        pct = Math.max(0, Math.min(100, Math.round(pct)));
+        this._optimisticPct = pct;
+        this._optimisticUntil = Date.now() + 2000;
+        this.style.setProperty("--_ppct", `${pct}%`);
+        this._popup.pct.textContent = `${pct} %`;
+        if (commit) this._setBrightness(pct);
+      };
+      slider.addEventListener("pointerdown", (e) => {
+        this._popupDrag = true;
+        slider.setPointerCapture(e.pointerId);
+        slider.classList.add("dragging");
+        fromEvent(e, false);
+      });
+      slider.addEventListener("pointermove", (e) => {
+        if (this._popupDrag) fromEvent(e, false);
+      });
+      slider.addEventListener("pointerup", (e) => {
+        if (!this._popupDrag) return;
+        this._popupDrag = false;
+        slider.classList.remove("dragging");
+        fromEvent(e, true);
+      });
+      slider.addEventListener("pointercancel", () => {
+        this._popupDrag = false;
+        slider.classList.remove("dragging");
+      });
+
+      // Preset chips
+      for (const t of TEMPS) {
+        const b = document.createElement("button");
+        b.className = "chip";
+        b.style.background = t.c;
+        b.title = `${t.k} K`;
+        b.addEventListener("click", () => {
+          this._hass.callService("light", "turn_on", {
+            entity_id: this._config.entity,
+            color_temp_kelvin: t.k,
+          });
+        });
+        this._popup.temps.appendChild(b);
+      }
+      for (const rgb of COLORS) {
+        const b = document.createElement("button");
+        b.className = "chip";
+        b.style.background = `rgb(${rgb.join(",")})`;
+        b.addEventListener("click", () => {
+          this._hass.callService("light", "turn_on", {
+            entity_id: this._config.entity,
+            rgb_color: rgb,
+          });
+        });
+        this._popup.colors.appendChild(b);
+      }
+    }
+
+    // Capability-driven sections
+    const modes = this._modes(st);
+    const hasTemp = modes.includes("color_temp");
+    const hasColor = modes.some((m) => COLOR_MODES.has(m));
+    this._popup.tempsSec.classList.toggle("hidden", !hasTemp);
+    this._popup.temps.classList.toggle("hidden", !hasTemp);
+    this._popup.colorsSec.classList.toggle("hidden", !hasColor);
+    this._popup.colors.classList.toggle("hidden", !hasColor);
+
+    this._popup.name.textContent =
+      this._config.name || st.attributes.friendly_name || this._config.entity;
+
+    this._popup.el.classList.remove("hidden");
+    this._syncPopup(st, st.state === "on", this._pct(st));
+  }
+
+  _syncPopup(st, on, pct) {
+    if (!this._popup || this._popup.el.classList.contains("hidden")) return;
+    if (this._popupDrag) return;
+    this._popup.power.classList.toggle("on", on);
+    this.style.setProperty("--_ppct", on ? `${pct}%` : "0%");
+    this._popup.pct.textContent = on ? `${pct} %` : "Éteinte";
+  }
+
+  _closePopup() {
+    if (this._popup) this._popup.el.classList.add("hidden");
+    this._popupDrag = false;
   }
 
   _moreInfo() {
@@ -313,7 +554,7 @@ window.customCards.push({
   type: "serenity-light-card",
   name: "Serenity Light",
   description:
-    "Light row with soft accent fill: tap toggles, drag dims, hold opens more-info.",
+    "Light row with soft fill: tap toggles, drag dims, hold opens a Serenity popup with presets.",
   preview: true,
   documentationURL: "https://github.com/your-username/serenity-cards",
 });
