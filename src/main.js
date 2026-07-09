@@ -14,6 +14,7 @@ import "./cards/group-card.js";
 import "./cards/entity-card.js";
 import "./cards/alarm-card.js";
 import "./cards/media-card.js";
+import "./cards/camera-card.js";
 import "./cards/weather-card.js";
 import "./cards/alerts-card.js";
 import "./cards/scene-card.js";

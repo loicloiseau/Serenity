@@ -198,7 +198,7 @@ export class SerenityClimateCard extends HTMLElement {
         --_accent: var(--serenity-climate-color, #5B9BF5);
         --_value: var(--serenity-value-color, var(--primary-text-color, #1f2937));
         --_muted: var(--serenity-muted-color, var(--secondary-text-color, #9aa3af));
-        --_ctrl: var(--serenity-control-bg, #f1f3f5);
+        --_ctrl: var(--serenity-control-bg, rgba(120, 130, 138, 0.10));
         display: block;
       }
       ha-card { padding: 10px 16px 10px; position: relative; }
@@ -262,7 +262,7 @@ export class SerenityClimateCard extends HTMLElement {
       .target { display: flex; align-items: flex-start; min-width: 96px; justify-content: center; }
       .t-num { font-size: 31px; font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--_value); }
       .t-unit { font-size: 14px; font-weight: 700; color: var(--_muted); margin-left: 3px; margin-top: 3px; }
-      .divider { height: 1px; background: var(--divider-color, #e6e8eb); }
+      .divider { height: 1px; background: var(--divider-color, rgba(120, 130, 138, 0.22)); }
       .bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
       .chip { display: flex; align-items: center; gap: 8px; background: none; border: none; padding: 0; cursor: pointer; }
       .chip-ico { width: 18px; height: 18px; color: var(--_accent); display: inline-flex; }

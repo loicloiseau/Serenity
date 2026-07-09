@@ -151,14 +151,14 @@ export class SerenityHeaderCardBase extends HTMLElement {
       .buttons { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
       .hbtn {
         width: 40px; height: 40px; flex: 0 0 auto; padding: 0; border: none; cursor: pointer;
-        border-radius: 12px; background: var(--serenity-button-bg, #ffffff);
+        border-radius: 12px; background: var(--serenity-button-bg, var(--ha-card-background, var(--card-background-color, #ffffff)));
         display: flex; align-items: center; justify-content: center;
         box-shadow: 0 1px 2px rgba(17, 24, 20, 0.08), 0 2px 6px rgba(17, 24, 20, 0.05);
         transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
       }
-      .hbtn:hover { background: var(--serenity-button-hover, #f4f6f5); }
+      .hbtn:hover { filter: brightness(0.97); }
       .hbtn:active { transform: scale(0.96); }
-      .hbtn ha-icon { --mdc-icon-size: 20px; color: var(--serenity-button-icon, #374151); }
+      .hbtn ha-icon { --mdc-icon-size: 20px; color: var(--serenity-button-icon, var(--primary-text-color, #374151)); }
       .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--_accent); }
       .badge .badge-text { font-size: 13px; font-weight: 600; color: var(--_accent); white-space: nowrap; }
       .badge.no-dot .dot { display: none; }
