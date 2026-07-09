@@ -19,6 +19,11 @@ import "./cards/weather-card.js";
 import "./cards/alerts-card.js";
 import "./cards/scene-card.js";
 import "./cards/light-card.js";
+import "./cards/graph-card.js";
+import "./cards/cover-card.js";
+
+// Visual editors (must load after every card is defined).
+import "./editors.js";
 
 console.info(
   `%c SERENITY-CARDS %c v${VERSION} `,
