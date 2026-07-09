@@ -160,12 +160,29 @@ export class SerenityTileCard extends HTMLElement {
     els.title.textContent = c.title;
     els.icon.setAttribute("icon", c.icon || "mdi:view-dashboard-outline");
 
-    const sub = this._resolveSubtitle(c.subtitle);
+    // Alert spec: when it matches, it overrides subtitle, accent and state.
+    // e.g. alert: { entities: [...], state: "on", format: "{n} ouverte{s}" }
+    let alertHit = null;
+    if (this._hass && c.alert && (c.alert.entities || c.alert.domain)) {
+      const spec = { state: "on", ...c.alert };
+      const n = countEntities(this._hass, spec);
+      if (n > 0) {
+        alertHit = {
+          text: countText(n, {
+            format: "{n} ouverte{s}",
+            ...spec,
+          }),
+          color: c.alert.color || "#E06B5B",
+        };
+      }
+    }
+
+    const sub = alertHit || this._resolveSubtitle(c.subtitle);
     els.sub.textContent = sub.text;
     els.sub.style.display = sub.text ? "" : "none";
 
-    // Active: count > 0, else the watched entity's state, else config flag.
-    let active = sub.active;
+    // Active: alert > count > watched entity's state > config flag.
+    let active = alertHit ? true : sub.active;
     if (active == null && c.entity && this._hass) {
       const st = this._hass.states[c.entity];
       const s = st ? st.state : "off";
@@ -175,7 +192,7 @@ export class SerenityTileCard extends HTMLElement {
     }
     if (active == null) active = c.active === true;
 
-    const accent = c.accent || "#3E9E6B";
+    const accent = alertHit ? alertHit.color : c.accent || "#3E9E6B";
     this.style.setProperty("--_accent", accent);
     this.style.setProperty("--_soft", hexToRgba(accent, 0.16));
     this.style.setProperty("--_glow", hexToRgba(accent, 0.28));

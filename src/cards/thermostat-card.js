@@ -117,31 +117,34 @@ export class SerenityThermostatCard extends HTMLElement {
         <button class="iconbtn power" title="Power"><ha-icon icon="mdi:power"></ha-icon></button>
       </div>
 
-      <div class="dial">
-        <svg class="gauge" viewBox="0 0 200 200" aria-hidden="true">
-          <circle class="track" cx="100" cy="100" r="${R}"></circle>
-          <circle class="prog" cx="100" cy="100" r="${R}"></circle>
-        </svg>
-        <div class="center">
-          <div class="consigne">CONSIGNE</div>
-          <div class="value"><span class="num">—</span><span class="deg">°</span></div>
-          <div class="pill"><span class="pdot"></span><span class="ptext"></span></div>
+      <div class="body">
+        <div class="dial">
+          <svg class="gauge" viewBox="0 0 200 200" aria-hidden="true">
+            <circle class="track" cx="100" cy="100" r="${R}"></circle>
+            <circle class="prog" cx="100" cy="100" r="${R}"></circle>
+          </svg>
+          <div class="center">
+            <div class="consigne">CONSIGNE</div>
+            <div class="value"><span class="num">—</span><span class="deg">°</span></div>
+            <div class="pill"><span class="pdot"></span><span class="ptext"></span></div>
+          </div>
+        </div>
+        <div class="side">
+          <button class="step plus" title="Monter"><ha-icon icon="mdi:plus"></ha-icon></button>
+          <button class="step minus" title="Baisser"><ha-icon icon="mdi:minus"></ha-icon></button>
         </div>
       </div>
 
-      <div class="steppers">
-        <button class="step minus" title="Baisser"><ha-icon icon="mdi:minus"></ha-icon></button>
-        <button class="step plus" title="Monter"><ha-icon icon="mdi:plus"></ha-icon></button>
-      </div>
-
-      <div class="tiles">
-        <div class="tile">
-          <div class="tlabel">Actuelle</div>
-          <div class="tval"><span class="cur-num">—</span><span class="tunit cur-unit"></span></div>
+      <div class="stats">
+        <div class="stat cur">
+          <ha-icon icon="mdi:thermometer"></ha-icon>
+          <span class="s-val"><span class="cur-num">—</span><span class="s-unit cur-unit"></span></span>
+          <span class="s-lab">Actuelle</span>
         </div>
-        <div class="tile">
-          <div class="tlabel">Humidité</div>
-          <div class="tval"><span class="hum-num">—</span><span class="tunit">%</span></div>
+        <div class="stat hum">
+          <ha-icon icon="mdi:water-percent"></ha-icon>
+          <span class="s-val"><span class="hum-num">—</span><span class="s-unit">%</span></span>
+          <span class="s-lab">Humidité</span>
         </div>
       </div>`;
     root.appendChild(card);
@@ -165,7 +168,7 @@ export class SerenityThermostatCard extends HTMLElement {
       plus: $(".step.plus"),
       curNum: $(".cur-num"),
       curUnit: $(".cur-unit"),
-      humTile: $(".tile:last-child"),
+      humTile: $(".stat.hum"),
       humNum: $(".hum-num"),
     };
 
@@ -231,48 +234,51 @@ export class SerenityThermostatCard extends HTMLElement {
       .iconbtn:active { transform: scale(0.94); }
       .iconbtn.off { background: var(--_tile); color: var(--_muted); }
 
-      /* Dial */
-      .dial { position: relative; display: flex; align-items: center; justify-content: center; margin: 0; }
-      .gauge { width: 100%; max-width: 148px; height: auto; display: block; transform: rotate(135deg); }
-      .track { fill: none; stroke: var(--_track); stroke-width: 12; stroke-linecap: round; }
-      .prog { fill: none; stroke: var(--_accent); stroke-width: 12; stroke-linecap: round; transition: stroke-dasharray 0.45s ease, stroke 0.3s ease; }
+      /* Body: dial on the left, vertical steppers on the right */
+      .body { display: flex; align-items: center; gap: 4px; margin: 2px 0 8px; }
+      .dial { position: relative; flex: 1 1 auto; display: flex; align-items: center; justify-content: center; }
+      .gauge { width: 100%; max-width: 196px; height: auto; display: block; transform: rotate(135deg); }
+      .track { fill: none; stroke: var(--_track); stroke-width: 13; stroke-linecap: round; }
+      .prog { fill: none; stroke: var(--_accent); stroke-width: 13; stroke-linecap: round; transition: stroke-dasharray 0.45s ease, stroke 0.3s ease; }
       .center {
         position: absolute; display: flex; flex-direction: column; align-items: center;
-        gap: 4px; transform: translateY(-3px); pointer-events: none;
+        gap: 5px; transform: translateY(-4px); pointer-events: none;
       }
-      .consigne { font-size: 9.5px; font-weight: 700; letter-spacing: 0.13em; color: var(--_muted); }
+      .consigne { font-size: 10px; font-weight: 700; letter-spacing: 0.13em; color: var(--_muted); }
       .value { display: flex; align-items: flex-start; color: var(--_value); line-height: 1; }
-      .num { font-size: 33px; font-weight: 800; letter-spacing: -1px; }
-      .deg { font-size: 15px; font-weight: 700; color: var(--_muted); margin-top: 3px; }
+      .num { font-size: 40px; font-weight: 800; letter-spacing: -1.2px; }
+      .deg { font-size: 17px; font-weight: 700; color: var(--_muted); margin-top: 3px; }
       .pill {
         display: inline-flex; align-items: center; gap: 5px;
-        background: var(--_soft); padding: 3px 10px; border-radius: 999px;
+        background: var(--_soft); padding: 4px 11px; border-radius: 999px;
       }
       .pill.hidden { display: none; }
-      .pdot { width: 5px; height: 5px; border-radius: 50%; background: var(--_accent); }
-      .ptext { font-size: 11.5px; font-weight: 600; color: var(--_accent); }
+      .pdot { width: 6px; height: 6px; border-radius: 50%; background: var(--_accent); }
+      .ptext { font-size: 12px; font-weight: 600; color: var(--_accent); }
 
-      /* Steppers */
-      .steppers { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0 0 10px; }
+      /* Steppers (vertical, thumb-friendly) */
+      .side { flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px; padding-right: 2px; }
       .step {
-        width: 42px; height: 42px; border: none; padding: 0; cursor: pointer;
-        border-radius: 13px; display: flex; align-items: center; justify-content: center;
+        width: 46px; height: 46px; border: none; padding: 0; cursor: pointer;
+        border-radius: 14px; display: flex; align-items: center; justify-content: center;
         transition: background 0.2s ease, transform 0.05s ease;
       }
-      .step ha-icon { --mdc-icon-size: 20px; }
+      .step ha-icon { --mdc-icon-size: 21px; }
       .step.minus { background: var(--_tile); color: var(--_value); }
       .step.plus { background: var(--_soft); color: var(--_accent); }
       .step:active { transform: scale(0.93); }
 
-      /* Tiles */
-      .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-      .tile { background: var(--_tile); border-radius: 12px; padding: 8px 12px; }
-      .tlabel { font-size: 12px; font-weight: 500; color: var(--_muted); }
-      .tval { margin-top: 2px; color: var(--_value); display: flex; align-items: baseline; }
-      .tval .cur-num, .tval .hum-num { font-size: 17px; font-weight: 800; letter-spacing: -0.4px; }
-      .tunit { font-size: 13px; font-weight: 600; color: var(--_muted); margin-left: 2px; }
-      .tile.hidden { display: none; }
-      .tiles.single { grid-template-columns: 1fr; }
+      /* Inline stats (current temp / humidity) */
+      .stats { display: flex; gap: 8px; }
+      .stat {
+        flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 7px;
+        background: var(--_tile); border-radius: 12px; padding: 8px 11px;
+      }
+      .stat ha-icon { --mdc-icon-size: 16px; color: var(--_muted); flex: 0 0 auto; }
+      .s-val { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; color: var(--_value); white-space: nowrap; }
+      .s-unit { font-size: 11px; font-weight: 600; color: var(--_muted); margin-left: 1px; }
+      .s-lab { font-size: 11.5px; font-weight: 500; color: var(--_muted); margin-left: auto; white-space: nowrap; }
+      .stat.hidden { display: none; }
 
       .step[disabled], .iconbtn[disabled] { opacity: 0.4; cursor: default; }
     `;
@@ -368,9 +374,6 @@ export class SerenityThermostatCard extends HTMLElement {
     const hum = this._humidity(a);
     const hasHum = hum != null && c.show_humidity !== false;
     els.humTile.classList.toggle("hidden", !hasHum);
-    els.card
-      .querySelector(".tiles")
-      .classList.toggle("single", !hasHum);
     if (hasHum) els.humNum.textContent = this._fmt(hum);
   }
 
