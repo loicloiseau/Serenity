@@ -104,7 +104,8 @@ export class SerenityAlarmCard extends HTMLElement {
         <span class="chip doors"><ha-icon icon="mdi:door"></ha-icon><span class="c-txt"></span></span>
         <span class="chip motion"><ha-icon icon="mdi:motion-sensor"></ha-icon><span class="c-txt"></span></span>
         <span class="chip last"><ha-icon icon="mdi:clock-outline"></ha-icon><span class="c-txt"></span></span>
-      </div>`;
+      </div>
+      <div class="actions"></div>`;
     root.appendChild(card);
 
     const $ = (s) => root.querySelector(s);
@@ -123,9 +124,13 @@ export class SerenityAlarmCard extends HTMLElement {
       motionIco: $(".chip.motion ha-icon"),
       last: $(".chip.last"),
       lastTxt: $(".chip.last .c-txt"),
+      actions: $(".actions"),
     };
 
-    card.addEventListener("click", () => this._moreInfo());
+    this._els.card.querySelector(".head").style.cursor = "pointer";
+    this._els.card
+      .querySelector(".head")
+      .addEventListener("click", () => this._moreInfo());
     this._built = true;
   }
 
@@ -167,6 +172,21 @@ export class SerenityAlarmCard extends HTMLElement {
       .chip.ok ha-icon { color: #3F9E6B; }
       .chip.hidden { display: none; }
       .chip.last { color: var(--_muted); }
+
+      /* Arm/disarm quick actions */
+      .actions { display: flex; gap: 8px; margin-top: 12px; }
+      .actions.hidden { display: none; }
+      .abtn {
+        flex: 1 1 0; min-width: 0; border: none; cursor: pointer;
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        padding: 9px 4px; border-radius: 13px; background: var(--_plate);
+        font-family: inherit; font-size: 11.5px; font-weight: 600; color: var(--_muted);
+        transition: background 0.18s ease, color 0.18s ease, transform 0.05s ease;
+      }
+      .abtn ha-icon { --mdc-icon-size: 18px; }
+      .abtn:active { transform: scale(0.96); }
+      .abtn.current { background: var(--abtn-soft); color: var(--abtn-color); }
+      .abtn[disabled] { opacity: 0.5; cursor: default; }
     `;
   }
 
@@ -254,6 +274,81 @@ export class SerenityAlarmCard extends HTMLElement {
     els.last.classList.toggle("hidden", mostRecent === 0);
     if (mostRecent) {
       els.lastTxt.textContent = relativeTime(new Date(mostRecent).toISOString());
+    }
+
+    this._renderActions(state);
+  }
+
+  /* ------------------------- arm/disarm actions ------------------------- */
+
+  static ACTIONS = {
+    disarm: {
+      label: "Désarmer",
+      icon: "mdi:shield-off-outline",
+      service: "alarm_disarm",
+      states: ["disarmed"],
+      color: "#9aa3af",
+    },
+    arm_home: {
+      label: "Maison",
+      icon: "mdi:shield-home",
+      service: "alarm_arm_home",
+      states: ["armed_home"],
+      color: "#3F9E6B",
+    },
+    arm_away: {
+      label: "Absent",
+      icon: "mdi:shield-lock",
+      service: "alarm_arm_away",
+      states: ["armed_away"],
+      color: "#5B9BF5",
+    },
+    arm_night: {
+      label: "Nuit",
+      icon: "mdi:shield-moon",
+      service: "alarm_arm_night",
+      states: ["armed_night"],
+      color: "#8B6FD0",
+    },
+    arm_vacation: {
+      label: "Vacances",
+      icon: "mdi:shield-airplane",
+      service: "alarm_arm_vacation",
+      states: ["armed_vacation"],
+      color: "#8B6FD0",
+    },
+  };
+
+  _renderActions(state) {
+    const c = this._config;
+    const els = this._els;
+    const show = c.show_actions !== false;
+    els.actions.classList.toggle("hidden", !show);
+    if (!show) return;
+
+    const wanted = Array.isArray(c.actions)
+      ? c.actions
+      : ["disarm", "arm_home", "arm_away"];
+    const busy = state === "pending" || state === "arming";
+
+    els.actions.textContent = "";
+    for (const key of wanted) {
+      const meta = SerenityAlarmCard.ACTIONS[key];
+      if (!meta) continue;
+      const btn = document.createElement("button");
+      btn.className = "abtn" + (meta.states.includes(state) ? " current" : "");
+      btn.disabled = busy || state === "unavailable";
+      btn.style.setProperty("--abtn-color", meta.color);
+      btn.style.setProperty("--abtn-soft", hexToRgba(meta.color, 0.15));
+      btn.innerHTML = `<ha-icon icon="${meta.icon}"></ha-icon><span>${meta.label}</span>`;
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (meta.states.includes(state)) return;
+        const data = { entity_id: this._config.entity };
+        if (this._config.code != null) data.code = String(this._config.code);
+        this._hass.callService("alarm_control_panel", meta.service, data);
+      });
+      els.actions.appendChild(btn);
     }
   }
 
