@@ -136,11 +136,21 @@ export class SerenityPersonCard extends HTMLElement {
           </div>
           <div class="locrow">
             <div class="loc"><ha-icon class="loc-ico"></ha-icon><span class="ltext"></span></div>
+            <div class="batt hidden"><ha-icon></ha-icon><span class="b-txt"></span></div>
             <div class="status"></div>
           </div>
         </div>
       </div>`;
     root.appendChild(card);
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      card.animate(
+        [
+          { opacity: 0, transform: "translateY(4px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 240, easing: "ease-out" }
+      );
+    }
 
     const $ = (s) => root.querySelector(s);
     this._els = {
@@ -156,6 +166,9 @@ export class SerenityPersonCard extends HTMLElement {
       loc: $(".loc"),
       status: $(".status"),
       since: $(".since"),
+      batt: $(".batt"),
+      battIco: $(".batt ha-icon"),
+      battTxt: $(".b-txt"),
     };
 
     this._els.person.addEventListener("click", () => this._moreInfo());
@@ -200,6 +213,12 @@ export class SerenityPersonCard extends HTMLElement {
         font-size: 13.5px; font-weight: 500; color: var(--_muted); }
       .loc-ico { --mdc-icon-size: 15px; flex: 0 0 auto; color: var(--_muted); }
       .ltext { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .batt { flex: 0 0 auto; display: flex; align-items: center; gap: 2px;
+        font-size: 12px; font-weight: 600; color: var(--_muted); white-space: nowrap; }
+      .batt ha-icon { --mdc-icon-size: 13px; }
+      .batt.mid { color: #E0A95B; }
+      .batt.low { color: #E06B5B; }
+      .batt.hidden { display: none; }
       .status { flex: 0 0 auto; font-size: 12.5px; font-weight: 600; color: var(--_muted); white-space: nowrap; }
       .status.home { color: var(--_home); }
       .status.hidden { display: none; }
@@ -286,9 +305,40 @@ export class SerenityPersonCard extends HTMLElement {
       }
     }
     icon = icon || "mdi:map-marker-outline";
+    // Distance to home while away (any numeric sensor, e.g. proximity)
+    if (!isHome && c.distance_entity) {
+      const ds = this._hass.states[c.distance_entity];
+      const dv = ds ? parseFloat(ds.state) : NaN;
+      if (!isNaN(dv)) {
+        const du = (ds.attributes.unit_of_measurement || "km").trim();
+        loc = `${loc} · ${Math.round(dv * 10) / 10} ${du}`;
+      }
+    }
     els.loc.style.display = loc ? "flex" : "none";
     els.locText.textContent = loc || "";
     els.locIco.setAttribute("icon", icon);
+
+    // Phone battery pill
+    if (c.battery_entity) {
+      const bs = this._hass.states[c.battery_entity];
+      const bv = bs ? parseFloat(bs.state) : NaN;
+      const show = !isNaN(bv);
+      els.batt.classList.toggle("hidden", !show);
+      if (show) {
+        const lvl = Math.round(bv);
+        els.battTxt.textContent = `${lvl}%`;
+        els.battIco.setAttribute(
+          "icon",
+          lvl >= 95
+            ? "mdi:battery"
+            : `mdi:battery-${Math.max(10, Math.round(lvl / 10) * 10)}`
+        );
+        els.batt.classList.toggle("low", lvl <= 20);
+        els.batt.classList.toggle("mid", lvl > 20 && lvl <= 40);
+      }
+    } else {
+      els.batt.classList.add("hidden");
+    }
 
     // Elapsed time
     const since = c.show_since === false ? "" : sinceText(st.last_changed);

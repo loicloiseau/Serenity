@@ -35,7 +35,7 @@ export class SerenityAlertsCard extends HTMLElement {
     this._built = false;
     this._timer = null;
     this._expanded = false;
-    this._dismissed = new Set();
+    this._dismissed = new Map(); // id -> until-ts | null
   }
 
   setConfig(config) {
@@ -82,9 +82,13 @@ export class SerenityAlertsCard extends HTMLElement {
   _loadDismissed() {
     try {
       const raw = window.localStorage.getItem(this._storageKey());
-      this._dismissed = new Set(raw ? JSON.parse(raw) : []);
+      const arr = raw ? JSON.parse(raw) : [];
+      // Accept both the old ["id"] and the new [["id", until]] formats.
+      this._dismissed = new Map(
+        arr.map((e) => (Array.isArray(e) ? [e[0], e[1]] : [e, null]))
+      );
     } catch (e) {
-      this._dismissed = new Set();
+      this._dismissed = new Map();
     }
   }
 
@@ -92,7 +96,7 @@ export class SerenityAlertsCard extends HTMLElement {
     try {
       window.localStorage.setItem(
         this._storageKey(),
-        JSON.stringify([...this._dismissed].slice(-STORAGE_CAP))
+        JSON.stringify([...this._dismissed.entries()].slice(-STORAGE_CAP))
       );
     } catch (e) {
       /* storage unavailable — dismissals stay session-only */
@@ -103,13 +107,20 @@ export class SerenityAlertsCard extends HTMLElement {
    *  that clears and re-triggers later (new timestamp → new id) reappears. */
   _pruneDismissed(activeIds) {
     let changed = false;
-    for (const id of this._dismissed) {
-      if (!activeIds.has(id)) {
+    const now = Date.now();
+    for (const [id, until] of this._dismissed) {
+      if (!activeIds.has(id) || (until != null && until <= now)) {
         this._dismissed.delete(id);
         changed = true;
       }
     }
     if (changed) this._saveDismissed();
+  }
+
+  _isDismissed(id) {
+    if (!this._dismissed.has(id)) return false;
+    const until = this._dismissed.get(id);
+    return until == null || until > Date.now();
   }
 
   /* ----------------------------- DOM build ----------------------------- */
@@ -132,6 +143,15 @@ export class SerenityAlertsCard extends HTMLElement {
       <div class="list"></div>
       <div class="stack hidden"><div class="layer l1"></div><div class="layer l2"></div></div>`;
     root.appendChild(card);
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      card.animate(
+        [
+          { opacity: 0, transform: "translateY(4px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 240, easing: "ease-out" }
+      );
+    }
 
     const $ = (s) => root.querySelector(s);
     this._els = {
@@ -243,7 +263,7 @@ export class SerenityAlertsCard extends HTMLElement {
     const out = [];
     const name = (st, id) =>
       (st && st.attributes.friendly_name) || id.split(".")[1];
-    const push = (entity, st, message, icon, color) =>
+    const push = (entity, st, message, icon, color, tap) =>
       out.push({
         id: `${entity}|${(st && st.last_changed) || "na"}`,
         entity,
@@ -251,6 +271,7 @@ export class SerenityAlertsCard extends HTMLElement {
         icon,
         color,
         since: st && st.last_changed,
+        tap,
       });
 
     for (const id of c.door_entities || []) {
@@ -292,7 +313,8 @@ export class SerenityAlertsCard extends HTMLElement {
           st,
           al.message || `${name(st, al.entity)} : ${st.state}`,
           al.icon || "mdi:alert-circle-outline",
-          al.color || "#E0A95B"
+          al.color || "#E0A95B",
+          al.tap_action
         );
     }
     for (const id of c.unavailable_entities || []) {
@@ -345,9 +367,21 @@ export class SerenityAlertsCard extends HTMLElement {
       row.appendChild(x);
     }
     row.addEventListener("click", () => {
+      const ta = al.tap;
+      if (ta && ta.action === "navigate" && ta.navigation_path) {
+        window.history.pushState(null, "", ta.navigation_path);
+        window.dispatchEvent(
+          new CustomEvent("location-changed", { detail: { replace: false } })
+        );
+        return;
+      }
+      if (ta && ta.action === "url" && ta.url_path) {
+        window.open(ta.url_path, "_blank");
+        return;
+      }
       this.dispatchEvent(
         new CustomEvent("hass-more-info", {
-          detail: { entityId: al.entity },
+          detail: { entityId: (ta && ta.entity) || al.entity },
           bubbles: true,
           composed: true,
         })
@@ -363,7 +397,7 @@ export class SerenityAlertsCard extends HTMLElement {
 
     const all = this._alerts();
     this._pruneDismissed(new Set(all.map((a) => a.id)));
-    const visible = all.filter((a) => !this._dismissed.has(a.id));
+    const visible = all.filter((a) => !this._isDismissed(a.id));
     const max = c.max_alerts || 8;
 
     els.list.textContent = "";
@@ -450,13 +484,16 @@ export class SerenityAlertsCard extends HTMLElement {
   }
 
   _dismiss(id) {
-    this._dismissed.add(id);
+    const h = this._config.snooze_hours;
+    this._dismissed.set(id, h ? Date.now() + h * 3600 * 1000 : null);
     this._saveDismissed();
     this._update();
   }
 
   _clearAll() {
-    for (const al of this._alerts()) this._dismissed.add(al.id);
+    const h = this._config.snooze_hours;
+    const until = h ? Date.now() + h * 3600 * 1000 : null;
+    for (const al of this._alerts()) this._dismissed.set(al.id, until);
     this._saveDismissed();
     this._expanded = false;
     this._update();

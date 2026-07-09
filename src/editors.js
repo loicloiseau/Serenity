@@ -102,6 +102,7 @@ const SCHEMAS = {
     ICON(),
     TXT("accent", "Couleur d'accent (hex)"),
     BOOL("full_width", "Pleine largeur"),
+    BOOL("popup", "Popup au maintien (désactiver = more-info)"),
   ],
   "serenity-entity-card": [
     ENT(null),
@@ -124,6 +125,8 @@ const SCHEMAS = {
     BOOL("show_picture", "Utiliser la photo"),
     BOOL("show_status", "Afficher le statut"),
     BOOL("show_since", "Afficher « depuis »"),
+    ENT("sensor", "battery_entity", "Batterie du téléphone"),
+    ENT("sensor", "distance_entity", "Distance (proximity)"),
   ],
   "serenity-camera-card": [
     ENT("camera"),
@@ -213,6 +216,14 @@ const SCHEMAS = {
     ENTS("sensor", "battery_entities", "Batteries"),
     NUM("battery_threshold", "Seuil batterie (%)", 1, 100),
     BOOL("expanded", "Dépliée par défaut"),
+    NUM("snooze_hours", "Masquer pendant (heures)", 1, 168),
+  ],
+  "serenity-timer-card": [
+    ENT("timer"),
+    TXT("name", "Nom"),
+    ICON(),
+    TXT("accent", "Couleur d'accent (hex)"),
+    BOOL("full_width", "Pleine largeur"),
   ],
 };
 
