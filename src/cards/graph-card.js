@@ -6,7 +6,14 @@
  * Multi-series with selector chips (one chart, tap a chip to switch):
  *   { entities: [{entity, name, accent, icon?}], hours, decimals }
  * History is fetched per series over the recorder WS API and cached.
+ *
+ * Extras:
+ *   tabs: false        # hide the selector chips (drive the card from
+ *                      # sensor cards with select_graph: true instead)
+ *   Touch/press the curve to scrub: a cursor shows the value and time.
  */
+
+import { statesDiffer } from "../header-utils.js";
 
 function hexToRgba(hex, a) {
   const h = String(hex).replace("#", "");
@@ -78,11 +85,19 @@ export class SerenityGraphCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._hass;
     this._hass = hass;
     if (!this.isConnected) return;
     this._ensureBuilt();
-    this._update();
     this._maybeFetch();
+    // Skip the re-render when none of the series entities changed.
+    if (
+      prev &&
+      this._series &&
+      !statesDiffer(prev, hass, this._series.map((s) => s.entity))
+    )
+      return;
+    this._update();
   }
 
   connectedCallback() {
@@ -92,6 +107,24 @@ export class SerenityGraphCard extends HTMLElement {
       this._maybeFetch();
     }
     this._timer = window.setInterval(() => this._maybeFetch(true), 5 * 60 * 1000);
+    // Sensor cards with select_graph: true broadcast this event on tap.
+    this._onSelect = (ev) => {
+      const ent = ev.detail && ev.detail.entity;
+      if (!ent || !this._series) return;
+      const i = this._series.findIndex((s) => s.entity === ent);
+      if (i < 0 || i === this._sel) return;
+      this._sel = i;
+      if (this._els && this._els.tabs) {
+        Array.from(this._els.tabs.children).forEach((el, j) =>
+          el.classList.toggle("active", j === i)
+        );
+      }
+      this._update();
+      this._maybeFetch();
+      this._broadcast();
+    };
+    window.addEventListener("serenity-graph-select", this._onSelect);
+    this._broadcast();
   }
 
   disconnectedCallback() {
@@ -99,6 +132,21 @@ export class SerenityGraphCard extends HTMLElement {
       window.clearInterval(this._timer);
       this._timer = null;
     }
+    if (this._onSelect) {
+      window.removeEventListener("serenity-graph-select", this._onSelect);
+      this._onSelect = null;
+    }
+  }
+
+  /** Tell linked sensor cards which series is displayed. */
+  _broadcast() {
+    const cur = this._cur && this._series ? this._cur() : null;
+    if (!cur || this._series.length < 2) return;
+    window.dispatchEvent(
+      new CustomEvent("serenity-graph-selected", {
+        detail: { entity: cur.entity },
+      })
+    );
   }
 
   getCardSize() {
@@ -141,16 +189,21 @@ export class SerenityGraphCard extends HTMLElement {
         <div class="value"><span class="num">—</span><span class="unit"></span></div>
       </div>
       <div class="tabs hidden"></div>
-      <svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="${this._gradId}" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" class="g-top"></stop>
-            <stop offset="100%" class="g-bot"></stop>
-          </linearGradient>
-        </defs>
-        <path class="area" fill="url(#${this._gradId})"></path>
-        <path class="line" fill="none"></path>
-      </svg>
+      <div class="chartwrap">
+        <svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="${this._gradId}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" class="g-top"></stop>
+              <stop offset="100%" class="g-bot"></stop>
+            </linearGradient>
+          </defs>
+          <path class="area" fill="url(#${this._gradId})"></path>
+          <path class="line" fill="none"></path>
+          <line class="cursor hidden" y1="0" y2="${H}"></line>
+          <circle class="cursor-dot hidden" r="3.4"></circle>
+        </svg>
+        <div class="tip hidden"><span class="tip-v"></span><span class="tip-t"></span></div>
+      </div>
       <div class="foot">
         <span class="mm min"></span>
         <span class="mm max"></span>
@@ -176,20 +229,95 @@ export class SerenityGraphCard extends HTMLElement {
       num: $(".num"),
       unit: $(".unit"),
       tabs: $(".tabs"),
+      chartwrap: $(".chartwrap"),
       chart: $(".chart"),
       area: $(".area"),
       line: $(".line"),
-      gTop: $(".g-top"),
-      gBot: $(".g-bot"),
+      cursor: $(".cursor"),
+      cursorDot: $(".cursor-dot"),
+      tip: $(".tip"),
+      tipV: $(".tip-v"),
+      tipT: $(".tip-t"),
       min: $(".mm.min"),
       max: $(".mm.max"),
+      gTop: $(".g-top"),
+      gBot: $(".g-bot"),
     };
 
     this._els.head = root.querySelector(".head");
     this._els.head.style.cursor = "pointer";
     this._els.head.addEventListener("click", () => this._moreInfo());
+    this._bindScrub();
     this._built = true;
     this._buildTabs();
+  }
+
+  /* Press / hover the curve to inspect a point (time + value). */
+  _bindScrub() {
+    const zone = this._els.chartwrap;
+    let down = false;
+    const show = (ev) => this._scrubAt(ev.clientX);
+    zone.addEventListener(
+      "pointerdown",
+      (ev) => {
+        down = true;
+        show(ev);
+      },
+      { passive: true }
+    );
+    zone.addEventListener(
+      "pointermove",
+      (ev) => {
+        if (down || ev.pointerType === "mouse") show(ev);
+      },
+      { passive: true }
+    );
+    const hide = () => {
+      down = false;
+      this._scrubHide();
+    };
+    zone.addEventListener("pointerup", hide, { passive: true });
+    zone.addEventListener("pointercancel", hide, { passive: true });
+    zone.addEventListener("pointerleave", hide, { passive: true });
+  }
+
+  _scrubAt(clientX) {
+    const plot = this._plot;
+    if (!plot || !plot.pts || plot.pts.length < 2) return;
+    const els = this._els;
+    const rect = els.chart.getBoundingClientRect();
+    if (!rect.width) return;
+    const f = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    const n = plot.pts.length;
+    const i = Math.min(n - 1, Math.round(f * (n - 1)));
+    const p = plot.pts[i];
+    const v = plot.vals[i];
+    const t = plot.t0 + (i / (n - 1)) * (plot.t1 - plot.t0);
+
+    els.cursor.setAttribute("x1", p.x.toFixed(1));
+    els.cursor.setAttribute("x2", p.x.toFixed(1));
+    els.cursorDot.setAttribute("cx", p.x.toFixed(1));
+    els.cursorDot.setAttribute("cy", p.y.toFixed(1));
+    els.cursor.classList.remove("hidden");
+    els.cursorDot.classList.remove("hidden");
+
+    els.tipV.textContent = `${v.toFixed(plot.dec)}${plot.unit}`;
+    els.tipT.textContent = new Date(t).toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const tip = els.tip;
+    tip.classList.remove("hidden");
+    const half = tip.offsetWidth / 2 || 30;
+    const x = Math.min(rect.width - half, Math.max(half, f * rect.width));
+    tip.style.left = `${x.toFixed(0)}px`;
+  }
+
+  _scrubHide() {
+    const els = this._els;
+    els.cursor.classList.add("hidden");
+    els.cursorDot.classList.add("hidden");
+    els.tip.classList.add("hidden");
   }
 
   _css() {
@@ -229,7 +357,9 @@ export class SerenityGraphCard extends HTMLElement {
         transition: background 0.15s ease, color 0.15s ease;
       }
       .tab.active { background: var(--t-soft); color: var(--t-accent); }
-      .chart { width: 100%; height: 78px; display: block; margin-top: 10px; }
+      /* pan-y: vertical touches keep scrolling the page, horizontal scrubs stay here */
+      .chartwrap { position: relative; margin-top: 10px; touch-action: pan-y; }
+      .chart { width: 100%; height: 78px; display: block; }
       .chart.loading {
         border-radius: 10px;
         background: linear-gradient(90deg, var(--_plate) 25%, rgba(120, 130, 138, 0.18) 50%, var(--_plate) 75%);
@@ -239,6 +369,21 @@ export class SerenityGraphCard extends HTMLElement {
       @keyframes shimmer { to { background-position: -200% 0; } }
       .line { stroke: var(--_accent); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
         vector-effect: non-scaling-stroke; transition: d 0.3s ease; }
+      .cursor { stroke: var(--_muted); stroke-width: 1; stroke-dasharray: 3 3;
+        vector-effect: non-scaling-stroke; opacity: 0.7; }
+      .cursor-dot { fill: var(--_accent); stroke: var(--ha-card-background, #fff); stroke-width: 1.5;
+        vector-effect: non-scaling-stroke; }
+      .cursor.hidden, .cursor-dot.hidden { display: none; }
+      .tip {
+        position: absolute; top: -6px; transform: translate(-50%, -100%);
+        display: flex; align-items: baseline; gap: 6px; white-space: nowrap;
+        padding: 5px 10px; border-radius: 999px; pointer-events: none;
+        background: var(--ha-card-background, var(--card-background-color, #fff));
+        box-shadow: 0 4px 14px rgba(12, 18, 14, 0.18);
+      }
+      .tip.hidden { display: none; }
+      .tip-v { font-size: 13px; font-weight: 800; color: var(--_accent); }
+      .tip-t { font-size: 11.5px; font-weight: 600; color: var(--_muted); }
       .foot { display: flex; justify-content: space-between; margin-top: 6px; }
       .mm { font-size: 11.5px; font-weight: 600; color: var(--_muted); }
     `;
@@ -248,8 +393,9 @@ export class SerenityGraphCard extends HTMLElement {
     if (!this._built) return;
     const tabs = this._els.tabs;
     tabs.textContent = "";
-    tabs.classList.toggle("hidden", this._series.length < 2);
-    if (this._series.length < 2) return;
+    const hidden = this._series.length < 2 || this._config.tabs === false;
+    tabs.classList.toggle("hidden", hidden);
+    if (hidden) return;
     this._series.forEach((s, i) => {
       const b = document.createElement("button");
       b.className = "tab" + (i === this._sel ? " active" : "");
@@ -262,6 +408,7 @@ export class SerenityGraphCard extends HTMLElement {
         b.classList.add("active");
         this._update();
         this._maybeFetch();
+        this._broadcast();
       });
       tabs.appendChild(b);
     });
@@ -349,6 +496,8 @@ export class SerenityGraphCard extends HTMLElement {
       els.line.setAttribute("d", "");
       els.min.textContent = "";
       els.max.textContent = "";
+      this._plot = null;
+      this._scrubHide();
       return;
     }
     els.chart.classList.remove("loading");
@@ -396,6 +545,10 @@ export class SerenityGraphCard extends HTMLElement {
       "";
     els.min.textContent = `min ${min.toFixed(dec)}${unit}`;
     els.max.textContent = `max ${max.toFixed(dec)}${unit}`;
+
+    // Kept for the scrub cursor (value + time under the finger).
+    this._plot = { pts, vals, t0, t1, unit, dec };
+    this._scrubHide();
   }
 
   _moreInfo() {

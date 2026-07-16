@@ -358,6 +358,9 @@ export class SerenityLightCard extends HTMLElement {
       d.moved = true;
       this._els.card.classList.add("dragging");
       window.clearTimeout(this._holdTimer);
+      // Tell ancestor containers (tabs card) this gesture is a brightness
+      // drag, not a swipe between decks.
+      window.__serenityCardDrag = true;
     }
     let pct = d.startPct + (dx / d.width) * 100;
     pct = Math.max(0, Math.min(100, Math.round(pct)));
@@ -375,6 +378,8 @@ export class SerenityLightCard extends HTMLElement {
     if (!d || e.pointerId !== d.id) return;
     this._drag = null;
     this._els.card.classList.remove("dragging");
+    if (d.moved)
+      window.setTimeout(() => (window.__serenityCardDrag = false), 0);
     if (!this._hass) return;
 
     if (d.moved && d.pct != null) {
@@ -390,6 +395,7 @@ export class SerenityLightCard extends HTMLElement {
     window.clearTimeout(this._holdTimer);
     this._drag = null;
     this._els.card.classList.remove("dragging");
+    window.__serenityCardDrag = false;
     this._update();
   }
 

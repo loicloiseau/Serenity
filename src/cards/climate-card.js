@@ -222,34 +222,43 @@ export class SerenityClimateCard extends HTMLElement {
       }
       ha-card { padding: 10px 16px 10px; position: relative; }
 
-      /* Popup selection menu */
+      /* Selection menu: full-screen backdrop + bottom sheet (easy to tap) */
       .overlay {
-        position: absolute; inset: 0; z-index: 3;
-        background: rgba(20, 26, 23, 0.18); border-radius: inherit;
-        display: flex; align-items: center; justify-content: center;
+        position: fixed; inset: 0; z-index: 998;
+        background: rgba(14, 19, 16, 0.38);
+        display: flex; align-items: flex-end; justify-content: center;
+        padding: 0 12px calc(16px + env(safe-area-inset-bottom, 0px));
+        box-sizing: border-box;
+        animation: overlay-in 0.18s ease;
       }
+      @keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
       .overlay.hidden { display: none; }
       .menu {
-        min-width: 190px; max-width: 84%; max-height: 88%; overflow-y: auto;
+        width: 100%; max-width: 420px; max-height: 64vh; overflow-y: auto;
         background: var(--ha-card-background, var(--card-background-color, #fff));
-        border-radius: 16px; padding: 6px;
-        box-shadow: 0 10px 32px rgba(15, 22, 18, 0.22);
-        animation: menu-in 0.16s ease;
+        border-radius: 22px; padding: 8px;
+        box-shadow: 0 18px 48px rgba(10, 16, 12, 0.35);
+        animation: menu-in 0.2s ease;
       }
-      @keyframes menu-in { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
+      @keyframes menu-in { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) {
+        .overlay, .menu { animation: none; }
+      }
       .m-title {
-        font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-        color: var(--_muted); padding: 7px 12px 5px;
+        font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+        color: var(--_muted); padding: 10px 14px 7px;
       }
       .m-row {
-        display: flex; align-items: center; gap: 10px; width: 100%;
+        display: flex; align-items: center; gap: 12px; width: 100%;
         border: none; background: none; cursor: pointer; text-align: left;
-        padding: 9px 12px; border-radius: 11px; font-family: inherit;
-        font-size: 14px; font-weight: 600; color: var(--_value);
+        padding: 13px 14px; border-radius: 14px; font-family: inherit;
+        font-size: 15px; font-weight: 600; color: var(--_value);
         transition: background 0.12s ease;
+        -webkit-tap-highlight-color: transparent;
       }
       .m-row:hover { background: var(--_ctrl); }
-      .m-row ha-icon { --mdc-icon-size: 19px; color: var(--_muted); flex: 0 0 auto; }
+      .m-row:active { background: var(--_ctrl); }
+      .m-row ha-icon { --mdc-icon-size: 20px; color: var(--_muted); flex: 0 0 auto; }
       .m-row .m-label { flex: 1 1 auto; min-width: 0; }
       .m-row.current { color: var(--_accent); }
       .m-row.current ha-icon { color: var(--_accent); }
@@ -334,7 +343,16 @@ export class SerenityClimateCard extends HTMLElement {
     const mode = st.state; // hvac mode
     const action = a.hvac_action;
     const isOn = mode !== "off";
-    if (isOn) this._lastMode = mode;
+    if (isOn && mode !== this._lastMode) {
+      this._lastMode = mode;
+      // Remember across reloads so power-on restores the real last mode
+      // (e.g. cool in summer) instead of the device default.
+      try {
+        window.localStorage.setItem(this._modeKey(), mode);
+      } catch (e) {
+        /* storage unavailable */
+      }
+    }
 
     // Accent: explicit config > action colour > mode colour > muted
     let accent = this._config.accent;
@@ -539,15 +557,31 @@ export class SerenityClimateCard extends HTMLElement {
     );
   }
 
+  _modeKey() {
+    return `serenity-climate-mode:${this._config.entity}`;
+  }
+
   _togglePower() {
     const st = this._entity();
     if (!st) return;
     if (st.state === "off") {
       const modes = (st.attributes.hvac_modes || []).filter((m) => m !== "off");
+      let stored = null;
+      try {
+        stored = window.localStorage.getItem(this._modeKey());
+      } catch (e) {
+        /* storage unavailable */
+      }
+      // on_mode config > last mode (this session) > remembered mode > first
       const target =
-        this._lastMode && modes.includes(this._lastMode)
+        (this._config.on_mode && modes.includes(this._config.on_mode)
+          ? this._config.on_mode
+          : null) ||
+        (this._lastMode && modes.includes(this._lastMode)
           ? this._lastMode
-          : modes[0];
+          : null) ||
+        (stored && modes.includes(stored) ? stored : null) ||
+        modes[0];
       if (target) this._service("set_hvac_mode", { hvac_mode: target });
       else this._service("turn_on", {});
     } else {

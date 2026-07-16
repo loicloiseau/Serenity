@@ -56,6 +56,7 @@ export class SerenityTileCard extends HTMLElement {
       if (c.alert.domain) return null;
       if (Array.isArray(c.alert.entities)) ids.push(...c.alert.entities);
     }
+    if (c.power && c.power.entity) ids.push(c.power.entity);
     return ids;
   }
 
@@ -188,6 +189,33 @@ export class SerenityTileCard extends HTMLElement {
     els.title.textContent = c.title;
     els.icon.setAttribute("icon", c.icon || "mdi:view-dashboard-outline");
 
+    // Power spec: accent follows the sign of a W sensor (export = production),
+    // and the tint intensity scales with the magnitude.
+    // e.g. power: { entity: sensor.p1_meter_puissance, max: 3000 }
+    let powerHit = null;
+    if (this._hass && c.power && c.power.entity) {
+      const st = this._hass.states[c.power.entity];
+      const v = st ? parseFloat(st.state) : NaN;
+      if (!isNaN(v)) {
+        const producing = c.power.invert === true ? v > 0 : v < 0;
+        const mag = Math.round(Math.abs(v));
+        const max = c.power.max || 3000;
+        const idle = mag < (c.power.threshold != null ? c.power.threshold : 25);
+        const t = Math.min(1, mag / max);
+        powerHit = {
+          text: idle
+            ? "Au repos"
+            : `${producing ? "Production" : "Consommation"} · ${mag} W`,
+          color: producing
+            ? c.power.produce_color || "#3F9E6B"
+            : c.power.consume_color || "#E0A95B",
+          soft: 0.06 + 0.2 * t,
+          glow: 0.1 + 0.34 * t,
+          active: !idle,
+        };
+      }
+    }
+
     // Alert spec: when it matches, it overrides subtitle, accent and state.
     // e.g. alert: { entities: [...], state: "on", format: "{n} ouverte{s}" }
     let alertHit = null;
@@ -205,12 +233,15 @@ export class SerenityTileCard extends HTMLElement {
       }
     }
 
-    const sub = alertHit || this._resolveSubtitle(c.subtitle);
+    const sub =
+      alertHit ||
+      (c.subtitle == null && powerHit) ||
+      this._resolveSubtitle(c.subtitle);
     els.sub.textContent = sub.text;
     els.sub.style.display = sub.text ? "" : "none";
 
-    // Active: alert > count > watched entity's state > config flag.
-    let active = alertHit ? true : sub.active;
+    // Active: alert > power > count > watched entity's state > config flag.
+    let active = alertHit ? true : powerHit ? powerHit.active : sub.active;
     if (active == null && c.entity && this._hass) {
       const st = this._hass.states[c.entity];
       const s = st ? st.state : "off";
@@ -220,10 +251,16 @@ export class SerenityTileCard extends HTMLElement {
     }
     if (active == null) active = c.active === true;
 
-    const accent = alertHit ? alertHit.color : c.accent || "#3E9E6B";
+    const accent = alertHit
+      ? alertHit.color
+      : powerHit
+        ? powerHit.color
+        : c.accent || "#3E9E6B";
+    const softA = !alertHit && powerHit ? powerHit.soft : 0.16;
+    const glowA = !alertHit && powerHit ? powerHit.glow : 0.28;
     this.style.setProperty("--_accent", accent);
-    this.style.setProperty("--_soft", hexToRgba(accent, 0.16));
-    this.style.setProperty("--_glow", hexToRgba(accent, 0.28));
+    this.style.setProperty("--_soft", hexToRgba(accent, softA));
+    this.style.setProperty("--_glow", hexToRgba(accent, glowA));
     els.card.classList.toggle("on", !!active);
   }
 

@@ -131,5 +131,12 @@ export function cardStyles(type) {
     .compact .name { overflow: hidden; text-overflow: ellipsis; }
     .compact .num { font-size: 19px; }
     .compact .sub { display: none; }
+    /* linked to the graph card (select_graph): subtle accent ring
+       (keeps the theme card shadow as the first layer) */
+    .linked {
+      box-shadow:
+        var(--ha-card-box-shadow, 0 2px 8px rgba(16, 22, 18, 0.08)),
+        inset 0 0 0 1.5px var(--_accent);
+    }
   `;
 }

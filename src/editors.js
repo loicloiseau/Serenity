@@ -156,6 +156,7 @@ const SCHEMAS = {
     ENT("climate"),
     TXT("accent", "Couleur d'accent (hex)"),
     NUM("step", "Pas", 0.1, 5, 0.1),
+    TXT("on_mode", "Mode à l'allumage (ex. cool)"),
   ],
   "serenity-group-card": [
     TXT("title", "Titre"),
@@ -201,6 +202,7 @@ const SCHEMAS = {
     NUM("hours", "Fenêtre (heures)", 1, 72),
     NUM("bars", "Nombre de barres", 6, 48),
     BOOL("compact", "Compact (demi-largeur, sans graphe)"),
+    BOOL("select_graph", "Le tap pilote la carte graphique"),
   ],
   "serenity-humidity-card": [
     ENT("sensor"),
@@ -208,6 +210,7 @@ const SCHEMAS = {
     NUM("hours", "Fenêtre (heures)", 1, 72),
     NUM("bars", "Nombre de barres", 6, 48),
     BOOL("compact", "Compact (demi-largeur, sans graphe)"),
+    BOOL("select_graph", "Le tap pilote la carte graphique"),
   ],
   "serenity-alerts-card": [
     TXT("empty_message", "Message quand tout va bien"),

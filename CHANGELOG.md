@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.14.0
+
+- **Tabs card** (`serenity-tabs-card`): chip-switched decks of cards — the scroll-safe replacement for gesture swipers (vertical touches always scroll the page; a clear horizontal swipe still switches decks)
+- **Graph card**: press/hover the curve to scrub — a cursor shows the exact value and time; `tabs: false` hides the chips; listens to `serenity-graph-select` events
+- **Sensor cards**: `select_graph: true` — tapping the card switches the graph card to that sensor (accent ring marks the displayed one)
+- **Tile card**: `power` spec — accent turns green when exporting/producing and amber when consuming, tint intensity scales with the wattage, auto subtitle "Production/Consommation · N W"
+- **Scene card**: `compact: true` — plain pill buttons, no last-scene highlight
+- **Climate card**: selection menus are now full-screen bottom sheets (easier to tap); power-on restores the last mode (remembered across reloads, `on_mode` to force one)
+- **Thermostat card**: dial properly centred, steppers overlay on the right
+
 ## v1.13.0
 
 - **Battery card** (`serenity-battery-card`): every battery sorted lowest-first with level bars, low/mid thresholds, auto-discovery (`auto: true`), `show_ok`, `max_items`
