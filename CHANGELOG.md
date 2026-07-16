@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.13.0
+
+- **Battery card** (`serenity-battery-card`): every battery sorted lowest-first with level bars, low/mid thresholds, auto-discovery (`auto: true`), `show_ok`, `max_items`
+- **Graph card multi-series**: `entities: [{entity, name, accent, icon}]` with selector chips to switch series — one card for all room temperatures
+- **Compact sensors**: `compact: true` on temperature/humidity cards — no history bars, half-width, fits a 2-up grid
+- **Performance**: every card now skips re-rendering when its watched entities haven't changed (guarded `set hass`)
+- **Navbar**: `hide_labels` option for an icon-only bar
+- Visual editors updated (battery card, compact toggle)
+
+## v1.12.0
+
+- **Navbar card** (`serenity-navbar-card`): floating bottom navigation, active-tab accent, count-spec badges, in-flow spacer
+- **Calendar card** (`serenity-calendar-card`): agenda for the next days with French date chips, per-calendar accents, 15-min cache
+- **Alerts card**: `show_updates: true` aggregates pending `update.*` entities into one row that navigates to `/config/updates`
+- **Title card**: `label: date` renders today's French date as the eyebrow
+
 ## v1.11.0
 
 - **Light popup**: long-press opens a Serenity panel — fine brightness slider, white-temperature presets (2700–6200 K) and colour presets, capability-aware (`popup: false` restores native more-info)

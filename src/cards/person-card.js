@@ -6,6 +6,8 @@
  * Designed to sit two-up (implements getGridOptions → half width).
  */
 
+import { statesDiffer } from "../header-utils.js";
+
 // Soft avatar palettes used when the person is home (picked by name hash).
 const PALETTE = [
   { bg: "#E3F2E9", fg: "#3F9E6B" }, // green
@@ -72,10 +74,18 @@ export class SerenityPersonCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._hass;
     this._hass = hass;
     if (!this.isConnected) return;
     this._ensureBuilt();
+    // Skip the re-render when none of the watched entities changed.
+    if (prev && !statesDiffer(prev, hass, this._watchedIds())) return;
     this._update();
+  }
+
+  _watchedIds() {
+    const c = this._config || {};
+    return [c.entity, c.battery_entity, c.distance_entity];
   }
 
   connectedCallback() {

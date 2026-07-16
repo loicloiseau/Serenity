@@ -41,6 +41,7 @@ export class SerenitySensorCardBase extends HTMLElement {
     this._historyTs = 0;
     if (this._built) {
       this._applyTypeVars();
+      this._applyCompact();
       this._update();
       this._maybeFetchHistory(true);
     }
@@ -71,6 +72,18 @@ export class SerenitySensorCardBase extends HTMLElement {
       window.clearInterval(this._refreshTimer);
       this._refreshTimer = null;
     }
+  }
+
+  _applyCompact() {
+    const card = this.shadowRoot && this.shadowRoot.querySelector("ha-card");
+    if (card) card.classList.toggle("compact", !!(this._config && this._config.compact));
+  }
+
+  getGridOptions() {
+    if (this._config && this._config.compact === true) {
+      return { columns: 6, rows: "auto", min_columns: 3 };
+    }
+    return { columns: 12, rows: "auto" };
   }
 
   getCardSize() {
@@ -141,6 +154,7 @@ export class SerenitySensorCardBase extends HTMLElement {
     this.addEventListener("click", () => this._handleTap());
 
     this._built = true;
+    this._applyCompact();
     this._applyTypeVars();
   }
 

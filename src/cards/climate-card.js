@@ -6,6 +6,8 @@
  * Accent colour follows the current action (cool = blue, heat = warm, etc.).
  */
 
+import { statesDiffer } from "../header-utils.js";
+
 const MODE_META = {
   off: { icon: "mdi:power", label: "Éteint" },
   cool: { icon: "mdi:snowflake", label: "Refroidit", color: "#5B9BF5" },
@@ -57,10 +59,18 @@ export class SerenityClimateCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._hass;
     this._hass = hass;
     if (!this.isConnected) return;
     this._ensureBuilt();
+    // Skip the re-render when none of the watched entities changed.
+    if (prev && !statesDiffer(prev, hass, this._watchedIds())) return;
     this._update();
+  }
+
+  _watchedIds() {
+    const c = this._config || {};
+    return [c.entity];
   }
 
   connectedCallback() {

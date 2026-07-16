@@ -123,5 +123,13 @@ export function cardStyles(type) {
       margin: 0 1px;
     }
     .unavailable .num { color: var(--_muted); }
+    /* compact: no history bars, tighter row — fits two-up */
+    .compact { padding: 9px 12px; }
+    .compact .chart { display: none; }
+    .compact .serenity { gap: 10px; }
+    .compact .title-block { flex: 1 1 auto; min-width: 0; }
+    .compact .name { overflow: hidden; text-overflow: ellipsis; }
+    .compact .num { font-size: 19px; }
+    .compact .sub { display: none; }
   `;
 }

@@ -6,6 +6,8 @@
  * the Serenity theme; the accent follows the current hvac action.
  */
 
+import { statesDiffer } from "../header-utils.js";
+
 const R = 80; // gauge radius (viewBox units)
 const C = 2 * Math.PI * R; // circumference
 const ARC = 0.75; // visible portion of the ring (270°)
@@ -70,10 +72,18 @@ export class SerenityThermostatCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._hass;
     this._hass = hass;
     if (!this.isConnected) return;
     this._ensureBuilt();
+    // Skip the re-render when none of the watched entities changed.
+    if (prev && !statesDiffer(prev, hass, this._watchedIds())) return;
     this._update();
+  }
+
+  _watchedIds() {
+    const c = this._config || {};
+    return [c.entity, c.humidity_entity];
   }
 
   connectedCallback() {

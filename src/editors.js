@@ -200,12 +200,14 @@ const SCHEMAS = {
     TXT("name", "Nom"),
     NUM("hours", "Fenêtre (heures)", 1, 72),
     NUM("bars", "Nombre de barres", 6, 48),
+    BOOL("compact", "Compact (demi-largeur, sans graphe)"),
   ],
   "serenity-humidity-card": [
     ENT("sensor"),
     TXT("name", "Nom"),
     NUM("hours", "Fenêtre (heures)", 1, 72),
     NUM("bars", "Nombre de barres", 6, 48),
+    BOOL("compact", "Compact (demi-largeur, sans graphe)"),
   ],
   "serenity-alerts-card": [
     TXT("empty_message", "Message quand tout va bien"),
@@ -224,6 +226,15 @@ const SCHEMAS = {
     NUM("days", "Jours à venir", 1, 30),
     NUM("max_events", "Nombre d'événements", 1, 20),
     TXT("empty_message", "Message si vide"),
+  ],
+  "serenity-battery-card": [
+    TXT("title", "Titre"),
+    BOOL("auto", "Découverte automatique"),
+    ENTS("sensor", "entities", "Batteries (manuel)"),
+    NUM("max_items", "Nombre max", 1, 30),
+    NUM("threshold_low", "Seuil critique (%)", 1, 100),
+    NUM("threshold_mid", "Seuil moyen (%)", 1, 100),
+    BOOL("show_ok", "Afficher les batteries saines"),
   ],
   "serenity-timer-card": [
     ENT("timer"),

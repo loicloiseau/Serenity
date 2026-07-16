@@ -9,7 +9,7 @@
  * ({entities|domain, state…}); a red pill with the count shows when > 0.
  */
 
-import { countEntities } from "../header-utils.js";
+import { countEntities , statesDiffer } from "../header-utils.js";
 
 export class SerenityNavbarCard extends HTMLElement {
   constructor() {
@@ -31,10 +31,25 @@ export class SerenityNavbarCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._hass;
     this._hass = hass;
     if (!this.isConnected) return;
     this._ensureBuilt();
+    // Skip the re-render when none of the watched entities changed.
+    if (prev && !statesDiffer(prev, hass, this._watchedIds())) return;
     this._update();
+  }
+
+  _watchedIds() {
+    const c = this._config || {};
+    const ids = [];
+    for (const it of c.items || []) {
+      const b = it.badge;
+      if (!b) continue;
+      if (b.domain) return null;
+      if (Array.isArray(b.entities)) ids.push(...b.entities);
+    }
+    return ids;
   }
 
   connectedCallback() {
@@ -137,6 +152,8 @@ export class SerenityNavbarCard extends HTMLElement {
         font-size: 9.5px; font-weight: 700; line-height: 15px; text-align: center;
       }
       .item .badge.hidden { display: none; }
+      :host(.no-labels) .item .lbl { display: none; }
+      :host(.no-labels) .item { padding: 10px 15px; }
     `;
   }
 
@@ -144,6 +161,7 @@ export class SerenityNavbarCard extends HTMLElement {
     if (!this._built) return;
     const bar = this._els.bar;
     bar.textContent = "";
+    this.classList.toggle("no-labels", this._config.hide_labels === true);
     this._items = [];
     for (const it of this._config.items) {
       const btn = document.createElement("button");

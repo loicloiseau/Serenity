@@ -6,7 +6,7 @@
  * glows with its accent colour. Fits two-up by default.
  */
 
-import { countEntities, countText, isActiveState } from "../header-utils.js";
+import { countEntities, countText, isActiveState , statesDiffer } from "../header-utils.js";
 
 function hexToRgba(hex, a) {
   const h = String(hex).replace("#", "");
@@ -34,10 +34,29 @@ export class SerenityTileCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._hass;
     this._hass = hass;
     if (!this.isConnected) return;
     this._ensureBuilt();
+    // Skip the re-render when none of the watched entities changed.
+    if (prev && !statesDiffer(prev, hass, this._watchedIds())) return;
     this._update();
+  }
+
+  _watchedIds() {
+    const c = this._config || {};
+    const ids = [c.entity];
+    const sub = c.subtitle;
+    if (sub && typeof sub === "object") {
+      if (sub.domain) return null; // domain scans: always update
+      if (sub.entity) ids.push(sub.entity);
+      if (Array.isArray(sub.entities)) ids.push(...sub.entities);
+    }
+    if (c.alert) {
+      if (c.alert.domain) return null;
+      if (Array.isArray(c.alert.entities)) ids.push(...c.alert.entities);
+    }
+    return ids;
   }
 
   connectedCallback() {

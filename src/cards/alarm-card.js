@@ -6,7 +6,7 @@
  * the most recent activity. Tap opens more-info.
  */
 
-import { relativeTime } from "../header-utils.js";
+import { relativeTime , statesDiffer } from "../header-utils.js";
 
 const STATES = {
   disarmed: { icon: "mdi:shield-off-outline", label: "Désarmé", sub: "Système inactif", color: "#9aa3af" },
@@ -49,10 +49,18 @@ export class SerenityAlarmCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._hass;
     this._hass = hass;
     if (!this.isConnected) return;
     this._ensureBuilt();
+    // Skip the re-render when none of the watched entities changed.
+    if (prev && !statesDiffer(prev, hass, this._watchedIds())) return;
     this._update();
+  }
+
+  _watchedIds() {
+    const c = this._config || {};
+    return [c.entity, ...(c.doors || []), ...(c.motion || [])];
   }
 
   connectedCallback() {
