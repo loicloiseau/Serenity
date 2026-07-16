@@ -151,6 +151,21 @@ export class SerenitySceneCard extends HTMLElement {
       }
       .scene.active { background: var(--sc-soft, var(--_plate)); }
       .scene.active .s-name { color: var(--sc-accent); }
+      /* compact: plain pill buttons, no last-scene highlight */
+      ha-card.compact .head { margin-bottom: 9px; }
+      ha-card.compact .scenes { flex-wrap: wrap; overflow: visible; }
+      ha-card.compact .scene {
+        flex: 1 1 auto; min-width: 0; max-width: none;
+        flex-direction: row; justify-content: center; gap: 7px;
+        padding: 9px 13px; border-radius: 999px;
+      }
+      ha-card.compact .scene .plate {
+        width: auto; height: auto; border-radius: 0; background: none;
+      }
+      ha-card.compact .scene ha-icon { --mdc-icon-size: 18px; }
+      ha-card.compact .scene .s-name { font-size: 13px; }
+      ha-card.compact .scene.active { background: var(--_plate); }
+      ha-card.compact .scene.active .s-name { color: var(--_value); }
     `;
   }
 
@@ -159,6 +174,7 @@ export class SerenitySceneCard extends HTMLElement {
     const c = this._config;
     const els = this._els;
 
+    els.card.classList.toggle("compact", c.compact === true);
     els.head.classList.toggle("hidden", !c.title);
     els.title.textContent = c.title || "";
 
@@ -208,7 +224,9 @@ export class SerenitySceneCard extends HTMLElement {
         spec.entity.split(".")[1];
       btn.classList.toggle(
         "active",
-        this._config.highlight_last !== false && spec.entity === latest
+        this._config.compact !== true &&
+          this._config.highlight_last !== false &&
+          spec.entity === latest
       );
     }
   }

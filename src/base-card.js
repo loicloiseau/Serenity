@@ -65,12 +65,27 @@ export class SerenitySensorCardBase extends HTMLElement {
       () => this._maybeFetchHistory(true),
       5 * 60 * 1000
     );
+    // Linked-graph mode: highlight this card while the graph shows it.
+    this._onGraphSelected = (ev) => {
+      if (!this._config || this._config.select_graph !== true) return;
+      const linked =
+        ev.detail && ev.detail.entity === this._config.entity;
+      if (this._els) this._els.card.classList.toggle("linked", linked);
+    };
+    window.addEventListener("serenity-graph-selected", this._onGraphSelected);
   }
 
   disconnectedCallback() {
     if (this._refreshTimer) {
       window.clearInterval(this._refreshTimer);
       this._refreshTimer = null;
+    }
+    if (this._onGraphSelected) {
+      window.removeEventListener(
+        "serenity-graph-selected",
+        this._onGraphSelected
+      );
+      this._onGraphSelected = null;
     }
   }
 
@@ -269,6 +284,15 @@ export class SerenitySensorCardBase extends HTMLElement {
 
   _handleTap() {
     if (!this._config || !this._config.entity) return;
+    if (this._config.select_graph === true) {
+      // Drive the Serenity graph card on the same view instead of more-info.
+      window.dispatchEvent(
+        new CustomEvent("serenity-graph-select", {
+          detail: { entity: this._config.entity },
+        })
+      );
+      return;
+    }
     this.dispatchEvent(
       new CustomEvent("hass-more-info", {
         detail: { entityId: this._config.entity },

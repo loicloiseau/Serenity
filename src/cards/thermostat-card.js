@@ -254,8 +254,9 @@ export class SerenityThermostatCard extends HTMLElement {
       .iconbtn.off { background: var(--_tile); color: var(--_muted); }
 
       /* Body: dial on the left, vertical steppers on the right */
-      .body { display: flex; align-items: center; gap: 4px; margin: 2px 0 8px; }
-      .dial { position: relative; flex: 1 1 auto; display: flex; align-items: center; justify-content: center; }
+      /* steppers overlay on the right so the dial centres in the card */
+      .body { position: relative; margin: 2px 0 8px; }
+      .dial { position: relative; display: flex; align-items: center; justify-content: center; }
       .gauge { width: 100%; max-width: 196px; height: auto; display: block; transform: rotate(135deg); }
       .track { fill: none; stroke: var(--_track); stroke-width: 13; stroke-linecap: round; }
       .prog { fill: none; stroke: var(--_accent); stroke-width: 13; stroke-linecap: round; transition: stroke-dasharray 0.45s ease, stroke 0.3s ease; }
@@ -276,7 +277,10 @@ export class SerenityThermostatCard extends HTMLElement {
       .ptext { font-size: 12px; font-weight: 600; color: var(--_accent); }
 
       /* Steppers (vertical, thumb-friendly) */
-      .side { flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px; padding-right: 2px; }
+      .side {
+        position: absolute; right: 2px; top: 50%; transform: translateY(-50%);
+        display: flex; flex-direction: column; gap: 10px;
+      }
       .step {
         width: 46px; height: 46px; border: none; padding: 0; cursor: pointer;
         border-radius: 14px; display: flex; align-items: center; justify-content: center;
