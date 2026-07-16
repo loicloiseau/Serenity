@@ -4,7 +4,11 @@
  * Current conditions in the Serenity style: icon plate, temperature,
  * French condition label, humidity/wind chips and an optional 5-day
  * forecast row (fetched via weather.get_forecasts, cached 30 min).
+ * Tapping the card slides up a detailed forecast sheet
+ * (sheet: false restores the native more-info).
  */
+
+import { SHEET_CSS, createSheet } from "../sheet.js";
 
 const CONDITIONS = {
   "clear-night": { label: "Nuit claire", icon: "mdi:weather-night", color: "#8B6FD0" },
@@ -135,7 +139,11 @@ export class SerenityWeatherCard extends HTMLElement {
       forecast: $(".forecast"),
     };
 
-    card.addEventListener("click", () => this._moreInfo());
+    card.addEventListener("click", () => {
+      if (this._config && this._config.sheet === false) this._moreInfo();
+      else this._openSheet();
+    });
+    this._sheet = createSheet(root);
     this._built = true;
   }
 
@@ -183,6 +191,24 @@ export class SerenityWeatherCard extends HTMLElement {
       .day ha-icon { --mdc-icon-size: 19px; }
       .d-hi { font-size: 12.5px; font-weight: 700; color: var(--_value); }
       .d-lo { font-size: 11px; font-weight: 500; color: var(--_muted); }
+      ${SHEET_CSS}
+      .f-row {
+        display: flex; align-items: center; gap: 12px;
+        padding: 11px 12px; border-radius: 14px;
+      }
+      .f-row ha-icon { --mdc-icon-size: 22px; flex: 0 0 auto; }
+      .f-day { flex: 0 0 auto; width: 74px; font-size: 13.5px; font-weight: 700;
+        color: var(--_value); text-transform: capitalize; }
+      .f-cond { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 500;
+        color: var(--_muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .f-rain { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px;
+        font-size: 12px; font-weight: 600; color: #5B9BF5; }
+      .f-rain ha-icon { --mdc-icon-size: 13px; color: #5B9BF5; }
+      .f-temps { flex: 0 0 auto; min-width: 74px; text-align: right;
+        font-size: 13.5px; font-variant-numeric: tabular-nums; }
+      .f-temps .lo { font-weight: 500; color: var(--_muted); }
+      .f-temps .hi { font-weight: 800; color: var(--_value); }
+      .f-empty { padding: 14px 12px; font-size: 13px; color: var(--_muted); }
     `;
   }
 
@@ -222,9 +248,9 @@ export class SerenityWeatherCard extends HTMLElement {
     }
   }
 
-  async _maybeFetchForecast() {
-    if (!this._hass || !this._config || this._config.show_forecast === false)
-      return;
+  async _maybeFetchForecast(force = false) {
+    if (!this._hass || !this._config) return;
+    if (!force && this._config.show_forecast === false) return;
     const now = Date.now();
     if (this._fetching || now - this._fcTs < 30 * 60 * 1000) return;
     this._fetching = true;
@@ -248,13 +274,17 @@ export class SerenityWeatherCard extends HTMLElement {
     this._fcTs = now;
     this._fetching = false;
     this._renderForecast();
+    this._renderSheet();
   }
 
   _renderForecast() {
     const els = this._els;
     const list = this._forecast;
-    els.forecast.classList.toggle("hidden", !list || list.length === 0);
-    if (!list || !list.length) return;
+    els.forecast.classList.toggle(
+      "hidden",
+      this._config.show_forecast === false || !list || list.length === 0
+    );
+    if (this._config.show_forecast === false || !list || !list.length) return;
     els.forecast.textContent = "";
     for (const f of list) {
       const meta =
@@ -280,6 +310,66 @@ export class SerenityWeatherCard extends HTMLElement {
         f.templow != null ? `${Math.round(f.templow)}°` : "";
       day.append(name, ico, hi, lo);
       els.forecast.appendChild(day);
+    }
+  }
+
+  _openSheet() {
+    const st = this._hass && this._hass.states[this._config.entity];
+    const name =
+      this._config.name ||
+      (st && st.attributes.friendly_name) ||
+      "Météo";
+    this._sheet.title.textContent = `Prévisions · ${name}`;
+    this._renderSheet();
+    this._maybeFetchForecast(true);
+    this._sheet.open();
+  }
+
+  _renderSheet() {
+    if (!this._sheet) return;
+    const body = this._sheet.body;
+    body.textContent = "";
+    const list = this._forecast;
+    if (!list || !list.length) {
+      const d = document.createElement("div");
+      d.className = "f-empty";
+      d.textContent = "Chargement des prévisions…";
+      body.appendChild(d);
+      return;
+    }
+    for (const f of list.slice(0, this._config.forecast_days || 7)) {
+      const meta =
+        CONDITIONS[f.condition] ||
+        { label: f.condition, icon: "mdi:weather-partly-cloudy", color: "#5B9BF5" };
+      const row = document.createElement("div");
+      row.className = "f-row";
+      const day = document.createElement("div");
+      day.className = "f-day";
+      day.textContent = new Date(f.datetime).toLocaleDateString("fr-FR", {
+        weekday: "short",
+        day: "numeric",
+      });
+      const ico = document.createElement("ha-icon");
+      ico.setAttribute("icon", meta.icon);
+      ico.style.color = meta.color;
+      const cond = document.createElement("div");
+      cond.className = "f-cond";
+      cond.textContent = meta.label || "";
+      row.append(day, ico, cond);
+      const pp = f.precipitation_probability;
+      if (pp != null && pp > 0) {
+        const rain = document.createElement("span");
+        rain.className = "f-rain";
+        rain.innerHTML = `<ha-icon icon="mdi:water"></ha-icon>${Math.round(pp)}%`;
+        row.appendChild(rain);
+      }
+      const temps = document.createElement("div");
+      temps.className = "f-temps";
+      const lo = f.templow != null ? `${Math.round(f.templow)}°` : "";
+      const hi = f.temperature != null ? `${Math.round(f.temperature)}°` : "—";
+      temps.innerHTML = `<span class="lo">${lo}</span> <span class="hi">${hi}</span>`;
+      row.appendChild(temps);
+      body.appendChild(row);
     }
   }
 

@@ -199,21 +199,29 @@ export class SerenityLightCard extends HTMLElement {
       ha-card.on .state { color: var(--_accent); font-weight: 600; }
       ha-card.unavail .name { color: var(--_muted); }
 
-      /* ------------------------- popup panel ------------------------- */
+      /* --------------- popup panel (bottom sheet style) --------------- */
       .popup { position: fixed; inset: 0; z-index: 999; display: flex;
-        align-items: center; justify-content: center; }
+        align-items: flex-end; justify-content: center;
+        padding: 0 12px calc(16px + env(safe-area-inset-bottom, 0px));
+        box-sizing: border-box; }
       .popup.hidden { display: none; }
-      .backdrop { position: absolute; inset: 0; background: rgba(14, 19, 16, 0.42);
-        backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+      .backdrop { position: absolute; inset: 0; background: rgba(14, 19, 16, 0.38);
+        backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+        animation: bd-in 0.18s ease; }
+      @keyframes bd-in { from { opacity: 0; } to { opacity: 1; } }
       .panel {
-        position: relative; width: min(340px, 88vw); box-sizing: border-box;
+        position: relative; width: 100%; max-width: 420px; max-height: 68vh;
+        overflow-y: auto; box-sizing: border-box;
         background: var(--ha-card-background, var(--card-background-color, #fff));
         border-radius: 22px; padding: 18px 18px 16px;
         box-shadow: 0 18px 50px rgba(10, 16, 12, 0.30);
-        animation: pop-in 0.18s ease;
+        animation: pop-in 0.2s ease;
         font-family: var(--_font);
       }
-      @keyframes pop-in { from { opacity: 0; transform: scale(0.94) translateY(6px); } to { opacity: 1; transform: none; } }
+      @keyframes pop-in { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) {
+        .backdrop, .panel { animation: none; }
+      }
       .p-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
       .p-name { flex: 1 1 auto; min-width: 0; font-size: 16px; font-weight: 700;
         letter-spacing: -0.2px; color: var(--_value);

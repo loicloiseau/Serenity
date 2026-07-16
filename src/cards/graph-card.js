@@ -414,42 +414,71 @@ export class SerenityGraphCard extends HTMLElement {
     });
   }
 
+  async _fetchOne(entity) {
+    const now = Date.now();
+    const hours = this._config.hours || 24;
+    const res = await this._hass.callWS({
+      type: "history/history_during_period",
+      start_time: new Date(now - hours * 3600 * 1000).toISOString(),
+      end_time: new Date(now).toISOString(),
+      entity_ids: [entity],
+      minimal_response: true,
+      no_attributes: true,
+    });
+    const series = (res && res[entity]) || [];
+    const data = series
+      .map((p) => ({
+        t:
+          p.lu != null
+            ? p.lu * 1000
+            : Date.parse(p.last_updated || p.last_changed || 0),
+        v: parseFloat(p.s != null ? p.s : p.state),
+      }))
+      .filter((p) => !isNaN(p.v))
+      .sort((a, b) => a.t - b.t);
+    this._cache[entity] = { data, ts: now };
+  }
+
   async _maybeFetch(force = false) {
     if (!this._hass || !this._config || this._fetching) return;
     const cur = this._cur();
     if (!cur) return;
     const now = Date.now();
     const cached = this._cache[cur.entity];
-    if (!force && cached && now - cached.ts < 120000) return;
-    if (force && cached && now - cached.ts < 15000) return;
-    this._fetching = true;
-    try {
-      const hours = this._config.hours || 24;
-      const res = await this._hass.callWS({
-        type: "history/history_during_period",
-        start_time: new Date(now - hours * 3600 * 1000).toISOString(),
-        end_time: new Date(now).toISOString(),
-        entity_ids: [cur.entity],
-        minimal_response: true,
-        no_attributes: true,
-      });
-      const series = (res && res[cur.entity]) || [];
-      const data = series
-        .map((p) => ({
-          t:
-            p.lu != null
-              ? p.lu * 1000
-              : Date.parse(p.last_updated || p.last_changed || 0),
-          v: parseFloat(p.s != null ? p.s : p.state),
-        }))
-        .filter((p) => !isNaN(p.v))
-        .sort((a, b) => a.t - b.t);
-      this._cache[cur.entity] = { data, ts: now };
-    } catch (e) {
-      /* recorder unavailable — keep last data */
+    const fresh = cached && now - cached.ts < (force ? 15000 : 120000);
+    if (!fresh) {
+      this._fetching = true;
+      try {
+        await this._fetchOne(cur.entity);
+      } catch (e) {
+        /* recorder unavailable — keep last data */
+      }
+      this._fetching = false;
+      this._render();
     }
-    this._fetching = false;
-    this._render();
+    // Warm the other series in the background so switching is instant.
+    this._prefetchOthers();
+  }
+
+  async _prefetchOthers() {
+    if (this._prefetching || !this._series || this._series.length < 2) return;
+    this._prefetching = true;
+    try {
+      for (const s of this._series) {
+        const c = this._cache[s.entity];
+        if (c && Date.now() - c.ts < 120000) continue;
+        try {
+          await this._fetchOne(s.entity);
+          // The user may have switched onto this series while it loaded.
+          const cur = this._cur();
+          if (cur && cur.entity === s.entity) this._render();
+        } catch (e) {
+          /* skip this series */
+        }
+      }
+    } finally {
+      this._prefetching = false;
+    }
   }
 
   _update() {

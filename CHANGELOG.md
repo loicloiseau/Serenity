@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.15.0
+
+- **Weather card**: tapping slides up a detailed forecast bottom sheet (day, condition, rain probability, min/max) — `sheet: false` restores more-info
+- **Light card**: the long-press panel is now a bottom sheet, same chrome as the climate menus
+- **Tabs card**: chips redesigned as a single card-shaped segmented control (consistent background and corner radius)
+- **Scene card compact**: buttons now rounded rectangles (14px) matching the rest of the suite
+- **Graph card**: all series are prefetched in the background — switching sensors is instant on first tap
+
 ## v1.14.0
 
 - **Tabs card** (`serenity-tabs-card`): chip-switched decks of cards — the scroll-safe replacement for gesture swipers (vertical touches always scroll the page; a clear horizontal swipe still switches decks)
