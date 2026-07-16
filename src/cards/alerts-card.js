@@ -317,6 +317,31 @@ export class SerenityAlertsCard extends HTMLElement {
           al.tap_action
         );
     }
+    // Pending HA / HACS updates, aggregated into one row (opt-in).
+    if (c.show_updates === true) {
+      let n = 0;
+      let latest = null;
+      for (const id in hs) {
+        if (id.indexOf("update.") !== 0) continue;
+        const st = hs[id];
+        if (st && st.state === "on") {
+          n++;
+          if (!latest || st.last_changed > latest) latest = st.last_changed;
+        }
+      }
+      if (n > 0) {
+        out.push({
+          id: `updates|${n}`,
+          entity: null,
+          message: `${n} mise${n > 1 ? "s" : ""} à jour disponible${n > 1 ? "s" : ""}`,
+          icon: "mdi:update",
+          color: "#5B9BF5",
+          since: latest,
+          tap: { action: "navigate", navigation_path: "/config/updates" },
+        });
+      }
+    }
+
     for (const id of c.unavailable_entities || []) {
       const st = hs[id];
       if (!st || st.state === "unavailable")

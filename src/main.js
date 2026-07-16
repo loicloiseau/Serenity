@@ -22,6 +22,8 @@ import "./cards/light-card.js";
 import "./cards/graph-card.js";
 import "./cards/cover-card.js";
 import "./cards/timer-card.js";
+import "./cards/navbar-card.js";
+import "./cards/calendar-card.js";
 
 // Visual editors (must load after every card is defined).
 import "./editors.js";

@@ -217,6 +217,13 @@ const SCHEMAS = {
     NUM("battery_threshold", "Seuil batterie (%)", 1, 100),
     BOOL("expanded", "Dépliée par défaut"),
     NUM("snooze_hours", "Masquer pendant (heures)", 1, 168),
+    BOOL("show_updates", "Signaler les mises à jour"),
+  ],
+  "serenity-calendar-card": [
+    TXT("title", "Titre"),
+    NUM("days", "Jours à venir", 1, 30),
+    NUM("max_events", "Nombre d'événements", 1, 20),
+    TXT("empty_message", "Message si vide"),
   ],
   "serenity-timer-card": [
     ENT("timer"),
