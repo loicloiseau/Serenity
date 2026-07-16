@@ -157,7 +157,7 @@ export class SerenitySceneCard extends HTMLElement {
       ha-card.compact .scene {
         flex: 1 1 auto; min-width: 0; max-width: none;
         flex-direction: row; justify-content: center; gap: 7px;
-        padding: 9px 13px; border-radius: 999px;
+        padding: 9px 13px; border-radius: 14px;
       }
       ha-card.compact .scene .plate {
         width: auto; height: auto; border-radius: 0; background: none;

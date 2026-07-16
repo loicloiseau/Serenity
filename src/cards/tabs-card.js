@@ -123,23 +123,29 @@ export class SerenityTabsCard extends HTMLElement {
         display: block;
         font-family: var(--_font);
       }
+      /* One card-shaped segmented control (same background/radius as cards) */
       .chips {
-        display: flex; gap: 7px; margin: 2px 2px 10px;
+        display: flex; gap: 4px; margin: 0 0 10px; padding: 5px;
+        background: var(--ha-card-background, var(--card-background-color, #fff));
+        border-radius: var(--ha-card-border-radius, 18px);
+        box-shadow: var(--ha-card-box-shadow, 0 1px 3px rgba(16, 22, 18, 0.08));
+        box-sizing: border-box;
         overflow-x: auto; scrollbar-width: none;
       }
       .chips::-webkit-scrollbar { display: none; }
       .chip {
-        flex: 1 0 auto; display: flex; align-items: center; justify-content: center; gap: 7px;
+        flex: 1 1 0; min-width: 0;
+        display: flex; align-items: center; justify-content: center; gap: 7px;
         border: none; cursor: pointer; font-family: inherit;
-        padding: 9px 15px; border-radius: 999px;
-        background: var(--ha-card-background, var(--card-background-color, #fff));
-        box-shadow: var(--ha-card-box-shadow, 0 1px 3px rgba(16, 22, 18, 0.08));
-        font-size: 13px; font-weight: 600; color: var(--_muted);
+        padding: 9px 12px;
+        border-radius: calc(var(--ha-card-border-radius, 18px) - 5px);
+        background: none; color: var(--_muted);
+        font-size: 13px; font-weight: 600; white-space: nowrap;
         transition: background 0.18s ease, color 0.18s ease, transform 0.06s ease;
         -webkit-tap-highlight-color: transparent;
       }
-      .chip:active { transform: scale(0.96); }
-      .chip ha-icon { --mdc-icon-size: 17px; }
+      .chip:active { transform: scale(0.97); }
+      .chip ha-icon { --mdc-icon-size: 17px; flex: 0 0 auto; }
       .chip.active { background: var(--c-soft); color: var(--c-accent); }
       /* Vertical touches scroll the page; only horizontal drags reach the swipe handler. */
       .panes { touch-action: pan-y; position: relative; }
