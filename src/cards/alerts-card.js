@@ -11,7 +11,7 @@
  * dismisses everything at once. All clear shows a calm green row.
  */
 
-import { relativeTime } from "../header-utils.js";
+import { relativeTime , statesDiffer } from "../header-utils.js";
 
 function hexToRgba(hex, a) {
   const h = String(hex).replace("#", "");
@@ -46,10 +46,27 @@ export class SerenityAlertsCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._hass;
     this._hass = hass;
     if (!this.isConnected) return;
     this._ensureBuilt();
+    // Skip the re-render when none of the watched entities changed.
+    if (prev && !statesDiffer(prev, hass, this._watchedIds())) return;
     this._update();
+  }
+
+  _watchedIds() {
+    const c = this._config || {};
+    if (c.show_updates === true) return null; // scans update.*
+    const ids = [
+      ...(c.door_entities || []),
+      ...(c.window_entities || []),
+      ...(c.ink_entities || []),
+      ...(c.battery_entities || []),
+      ...(c.unavailable_entities || []),
+    ];
+    for (const al of c.alerts || []) ids.push(al.entity);
+    return ids;
   }
 
   connectedCallback() {

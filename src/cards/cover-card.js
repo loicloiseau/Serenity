@@ -7,6 +7,8 @@
  * light card). Fits two-up by default.
  */
 
+import { statesDiffer } from "../header-utils.js";
+
 function hexToRgba(hex, a) {
   const h = String(hex).replace("#", "");
   const n =
@@ -58,10 +60,18 @@ export class SerenityCoverCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._hass;
     this._hass = hass;
     if (!this.isConnected) return;
     this._ensureBuilt();
+    // Skip the re-render when none of the watched entities changed.
+    if (prev && !statesDiffer(prev, hass, this._watchedIds())) return;
     this._update();
+  }
+
+  _watchedIds() {
+    const c = this._config || {};
+    return [c.entity];
   }
 
   connectedCallback() {

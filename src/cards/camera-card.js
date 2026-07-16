@@ -7,6 +7,8 @@
  * binary_sensor. Tap opens more-info (full live view).
  */
 
+import { statesDiffer } from "../header-utils.js";
+
 const REFRESH_MS = 10000;
 
 export class SerenityCameraCard extends HTMLElement {
@@ -27,10 +29,18 @@ export class SerenityCameraCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._hass;
     this._hass = hass;
     if (!this.isConnected) return;
     this._ensureBuilt();
+    // Skip the re-render when none of the watched entities changed.
+    if (prev && !statesDiffer(prev, hass, this._watchedIds())) return;
     this._update();
+  }
+
+  _watchedIds() {
+    const c = this._config || {};
+    return [c.entity, c.motion_entity];
   }
 
   connectedCallback() {

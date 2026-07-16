@@ -7,7 +7,7 @@
  * red accent for door/window alerts, orange for motion, etc.
  */
 
-import { relativeTime, isActiveState } from "../header-utils.js";
+import { relativeTime, isActiveState , statesDiffer } from "../header-utils.js";
 
 const TOGGLE_DOMAINS = new Set([
   "switch",
@@ -58,10 +58,18 @@ export class SerenityEntityCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const prev = this._hass;
     this._hass = hass;
     if (!this.isConnected) return;
     this._ensureBuilt();
+    // Skip the re-render when none of the watched entities changed.
+    if (prev && !statesDiffer(prev, hass, this._watchedIds())) return;
     this._update();
+  }
+
+  _watchedIds() {
+    const c = this._config || {};
+    return [c.entity];
   }
 
   connectedCallback() {

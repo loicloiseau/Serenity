@@ -100,3 +100,17 @@ export function relativeTime(iso) {
   if (d.toDateString() === yest.toDateString()) return `hier ${hm}`;
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
+
+/**
+ * True when any watched entity's state object changed between two hass
+ * snapshots. `ids` may contain null/undefined entries (skipped); a null
+ * ids list means "unknown scope" and always reports a change.
+ */
+export function statesDiffer(oldHass, newHass, ids) {
+  if (!oldHass || ids == null) return true;
+  for (const id of ids) {
+    if (!id) continue;
+    if (oldHass.states[id] !== newHass.states[id]) return true;
+  }
+  return false;
+}

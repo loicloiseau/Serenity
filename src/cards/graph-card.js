@@ -1,9 +1,11 @@
 /**
  * Serenity Graph Card — custom:serenity-graph-card
  *
- * A smooth history curve for any numeric sensor (temperature, power…):
- * icon plate, name, the current value large on the right and a soft
- * gradient area chart of the last N hours with min/max in the footer.
+ * A smooth history curve for numeric sensors. Single entity:
+ *   { entity, name, icon, accent, hours, unit, decimals }
+ * Multi-series with selector chips (one chart, tap a chip to switch):
+ *   { entities: [{entity, name, accent, icon?}], hours, decimals }
+ * History is fetched per series over the recorder WS API and cached.
  */
 
 function hexToRgba(hex, a) {
@@ -21,6 +23,7 @@ function hexToRgba(hex, a) {
 const W = 300; // viewBox width
 const H = 80; // viewBox height
 const PAD = 6; // vertical padding inside the chart
+const DEFAULT_ACCENTS = ["#3F9E6B", "#E0813F", "#5B9BF5", "#8B6FD0", "#3FA597", "#D267A0"];
 
 /** Piecewise cubic through the points, horizontal-tangent style (smooth). */
 function smoothPath(pts) {
@@ -42,21 +45,33 @@ export class SerenityGraphCard extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
     this._built = false;
-    this._history = [];
-    this._historyTs = 0;
+    this._cache = {}; // entity -> {data: [{t,v}], ts}
     this._fetching = false;
+    this._sel = 0;
     this._timer = null;
     this._gradId = `sgc-grad-${++GRAD_SEQ}`;
   }
 
   setConfig(config) {
-    if (!config || !config.entity) {
-      throw new Error("You must define a sensor entity");
+    if (!config || (!config.entity && !Array.isArray(config.entities))) {
+      throw new Error("You must define entity or entities");
     }
     this._config = { hours: 24, decimals: 1, ...config };
-    this._history = [];
-    this._historyTs = 0;
+    // Normalise both forms into a series list.
+    const raw = Array.isArray(config.entities)
+      ? config.entities
+      : [{ entity: config.entity, name: config.name, accent: config.accent, icon: config.icon }];
+    this._series = raw
+      .map((s, i) =>
+        typeof s === "string"
+          ? { entity: s, accent: DEFAULT_ACCENTS[i % DEFAULT_ACCENTS.length] }
+          : { accent: DEFAULT_ACCENTS[i % DEFAULT_ACCENTS.length], ...s }
+      )
+      .filter((s) => s.entity);
+    this._sel = 0;
+    this._cache = {};
     if (this._built) {
+      this._buildTabs();
       this._update();
       this._maybeFetch(true);
     }
@@ -101,6 +116,10 @@ export class SerenityGraphCard extends HTMLElement {
     return { entity };
   }
 
+  _cur() {
+    return this._series[this._sel] || this._series[0];
+  }
+
   _ensureBuilt() {
     if (this._built) return;
     const root = this.shadowRoot;
@@ -121,6 +140,7 @@ export class SerenityGraphCard extends HTMLElement {
         </div>
         <div class="value"><span class="num">—</span><span class="unit"></span></div>
       </div>
+      <div class="tabs hidden"></div>
       <svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="${this._gradId}" x1="0" y1="0" x2="0" y2="1">
@@ -150,10 +170,13 @@ export class SerenityGraphCard extends HTMLElement {
     this._els = {
       card,
       icon: $(".icon-box ha-icon"),
+      iconBox: $(".icon-box"),
       name: $(".name"),
       range: $(".range"),
       num: $(".num"),
       unit: $(".unit"),
+      tabs: $(".tabs"),
+      chart: $(".chart"),
       area: $(".area"),
       line: $(".line"),
       gTop: $(".g-top"),
@@ -162,8 +185,11 @@ export class SerenityGraphCard extends HTMLElement {
       max: $(".mm.max"),
     };
 
-    card.addEventListener("click", () => this._moreInfo());
+    this._els.head = root.querySelector(".head");
+    this._els.head.style.cursor = "pointer";
+    this._els.head.addEventListener("click", () => this._moreInfo());
     this._built = true;
+    this._buildTabs();
   }
 
   _css() {
@@ -177,7 +203,7 @@ export class SerenityGraphCard extends HTMLElement {
         display: block;
         font-family: var(--_font);
       }
-      ha-card { padding: 13px 14px 10px; cursor: pointer; overflow: hidden; }
+      ha-card { padding: 13px 14px 10px; overflow: hidden; }
       .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
       .left { display: flex; align-items: center; gap: 11px; min-width: 0; }
       .icon-box {
@@ -193,6 +219,16 @@ export class SerenityGraphCard extends HTMLElement {
       .value { display: flex; align-items: flex-start; line-height: 1; flex: 0 0 auto; }
       .num { font-size: 24px; font-weight: 800; letter-spacing: -0.6px; color: var(--_value); }
       .unit { font-size: 13px; font-weight: 700; color: var(--_muted); margin-left: 2px; margin-top: 2px; }
+      .tabs { display: flex; gap: 6px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; }
+      .tabs::-webkit-scrollbar { display: none; }
+      .tabs.hidden { display: none; }
+      .tab {
+        flex: 0 0 auto; border: none; cursor: pointer; font-family: inherit;
+        padding: 5px 12px; border-radius: 999px; background: var(--_plate);
+        font-size: 12px; font-weight: 600; color: var(--_muted);
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .tab.active { background: var(--t-soft); color: var(--t-accent); }
       .chart { width: 100%; height: 78px; display: block; margin-top: 10px; }
       .chart.loading {
         border-radius: 10px;
@@ -202,16 +238,43 @@ export class SerenityGraphCard extends HTMLElement {
       }
       @keyframes shimmer { to { background-position: -200% 0; } }
       .line { stroke: var(--_accent); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
-        vector-effect: non-scaling-stroke; }
+        vector-effect: non-scaling-stroke; transition: d 0.3s ease; }
       .foot { display: flex; justify-content: space-between; margin-top: 6px; }
       .mm { font-size: 11.5px; font-weight: 600; color: var(--_muted); }
     `;
   }
 
+  _buildTabs() {
+    if (!this._built) return;
+    const tabs = this._els.tabs;
+    tabs.textContent = "";
+    tabs.classList.toggle("hidden", this._series.length < 2);
+    if (this._series.length < 2) return;
+    this._series.forEach((s, i) => {
+      const b = document.createElement("button");
+      b.className = "tab" + (i === this._sel ? " active" : "");
+      b.style.setProperty("--t-accent", s.accent);
+      b.style.setProperty("--t-soft", hexToRgba(s.accent, 0.14));
+      b.textContent = s.name || s.entity.split(".")[1];
+      b.addEventListener("click", () => {
+        this._sel = i;
+        for (const el of tabs.children) el.classList.remove("active");
+        b.classList.add("active");
+        this._update();
+        this._maybeFetch();
+      });
+      tabs.appendChild(b);
+    });
+  }
+
   async _maybeFetch(force = false) {
     if (!this._hass || !this._config || this._fetching) return;
+    const cur = this._cur();
+    if (!cur) return;
     const now = Date.now();
-    if (!force && this._historyTs && now - this._historyTs < 120000) return;
+    const cached = this._cache[cur.entity];
+    if (!force && cached && now - cached.ts < 120000) return;
+    if (force && cached && now - cached.ts < 15000) return;
     this._fetching = true;
     try {
       const hours = this._config.hours || 24;
@@ -219,12 +282,12 @@ export class SerenityGraphCard extends HTMLElement {
         type: "history/history_during_period",
         start_time: new Date(now - hours * 3600 * 1000).toISOString(),
         end_time: new Date(now).toISOString(),
-        entity_ids: [this._config.entity],
+        entity_ids: [cur.entity],
         minimal_response: true,
         no_attributes: true,
       });
-      const series = (res && res[this._config.entity]) || [];
-      this._history = series
+      const series = (res && res[cur.entity]) || [];
+      const data = series
         .map((p) => ({
           t:
             p.lu != null
@@ -234,7 +297,7 @@ export class SerenityGraphCard extends HTMLElement {
         }))
         .filter((p) => !isNaN(p.v))
         .sort((a, b) => a.t - b.t);
-      this._historyTs = now;
+      this._cache[cur.entity] = { data, ts: now };
     } catch (e) {
       /* recorder unavailable — keep last data */
     }
@@ -246,24 +309,26 @@ export class SerenityGraphCard extends HTMLElement {
     if (!this._built || !this._config || !this._hass) return;
     const c = this._config;
     const els = this._els;
-    const st = this._hass.states[c.entity];
+    const cur = this._cur();
+    if (!cur) return;
+    const st = this._hass.states[cur.entity];
 
     els.name.textContent =
-      c.name || (st && st.attributes.friendly_name) || c.entity;
+      cur.name || (st && st.attributes.friendly_name) || cur.entity;
     els.icon.setAttribute(
       "icon",
-      c.icon || (st && st.attributes.icon) || "mdi:chart-bell-curve-cumulative"
+      cur.icon || (st && st.attributes.icon) || "mdi:chart-bell-curve-cumulative"
     );
     els.range.textContent = `Dernières ${c.hours || 24} h`;
 
-    const accent = c.accent || "#3F9E6B";
+    const accent = cur.accent || "#3F9E6B";
     this.style.setProperty("--_accent", accent);
     this.style.setProperty("--_soft2", hexToRgba(accent, 0.14));
     els.gTop.setAttribute("stop-color", hexToRgba(accent, 0.22));
     els.gBot.setAttribute("stop-color", hexToRgba(accent, 0));
 
     const unit =
-      c.unit || (st && st.attributes.unit_of_measurement) || "";
+      cur.unit || c.unit || (st && st.attributes.unit_of_measurement) || "";
     els.unit.textContent = unit;
     const v = st ? parseFloat(st.state) : NaN;
     els.num.textContent = isNaN(v) ? "—" : v.toFixed(c.decimals);
@@ -274,17 +339,19 @@ export class SerenityGraphCard extends HTMLElement {
   _render() {
     if (!this._built) return;
     const els = this._els;
-    const data = this._history;
-    const chart = this.shadowRoot.querySelector(".chart");
+    const cur = this._cur();
+    const cached = cur && this._cache[cur.entity];
+    const data = cached && cached.data;
+
     if (!data || data.length < 2) {
-      chart.classList.add("loading");
+      els.chart.classList.add("loading");
       els.area.setAttribute("d", "");
       els.line.setAttribute("d", "");
       els.min.textContent = "";
       els.max.textContent = "";
       return;
     }
-    chart.classList.remove("loading");
+    els.chart.classList.remove("loading");
 
     // Downsample to ~60 buckets for a clean curve.
     const buckets = 60;
@@ -318,26 +385,25 @@ export class SerenityGraphCard extends HTMLElement {
 
     const line = smoothPath(pts);
     els.line.setAttribute("d", line);
-    els.area.setAttribute(
-      "d",
-      `${line} L ${W} ${H} L 0 ${H} Z`
-    );
+    els.area.setAttribute("d", `${line} L ${W} ${H} L 0 ${H} Z`);
 
     const dec = this._config.decimals != null ? this._config.decimals : 1;
+    const st = this._hass && this._hass.states[cur.entity];
     const unit =
+      cur.unit ||
       this._config.unit ||
-      (this._hass &&
-        this._hass.states[this._config.entity] &&
-        this._hass.states[this._config.entity].attributes.unit_of_measurement) ||
+      (st && st.attributes.unit_of_measurement) ||
       "";
     els.min.textContent = `min ${min.toFixed(dec)}${unit}`;
     els.max.textContent = `max ${max.toFixed(dec)}${unit}`;
   }
 
   _moreInfo() {
+    const cur = this._cur();
+    if (!cur) return;
     this.dispatchEvent(
       new CustomEvent("hass-more-info", {
-        detail: { entityId: this._config.entity },
+        detail: { entityId: cur.entity },
         bubbles: true,
         composed: true,
       })
@@ -354,7 +420,7 @@ window.customCards.push({
   type: "serenity-graph-card",
   name: "Serenity Graph",
   description:
-    "Smooth gradient history curve for any numeric sensor, with current value and min/max.",
+    "Smooth gradient history curve with optional multi-sensor selector chips.",
   preview: true,
   documentationURL: "https://github.com/your-username/serenity-cards",
 });
