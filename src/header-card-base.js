@@ -198,8 +198,15 @@ export class SerenityHeaderCardBase extends HTMLElement {
     const c = this._config;
     const els = this._els;
 
-    // Eyebrow / label
-    els.eyebrow.textContent = c.label || "";
+    // Eyebrow / label — the special value "date" renders today's date
+    els.eyebrow.textContent =
+      c.label === "date"
+        ? new Date().toLocaleDateString("fr-FR", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          })
+        : c.label || "";
     els.eyebrow.classList.toggle("hidden", !c.label);
     els.eyebrow.classList.toggle("upper", c.label_uppercase !== false);
     els.eyebrow.style.color = c.label_color || "";
