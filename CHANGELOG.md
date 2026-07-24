@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.16.0
+
+- **Charger card** (`serenity-charger-card`): EV station with state pill, live power, session/total energy, charge on/off, and bottom-sheet controls for the current limit and smart-charging mode (Peblar-friendly)
+- **Energy flow card** (`serenity-energy-flow-card`): live "where is my power going" — net grid import/export pill, stacked proportion bar, ranked device list with "Autres" remainder while importing
+
 ## v1.15.0
 
 - **Weather card**: tapping slides up a detailed forecast bottom sheet (day, condition, rain probability, min/max) — `sheet: false` restores more-info
